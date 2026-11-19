@@ -9,7 +9,7 @@ export default {
     if (request.method !== "GET" && request.method !== "HEAD") {
       return new Response(null, { status: 405, headers: { allow: "GET, HEAD", "cache-control": "no-store" } });
     }
-    const pageUrl = new URL("/", request.url);
+    const pageUrl = new URL("/index.html", request.url);
     const page = await env.ASSETS.fetch(new Request(pageUrl, { method: "GET" }));
     if (!page.ok) return new Response("Temporarily unavailable", { status: 503, headers: { "retry-after": "3600", "cache-control": "no-store" } });
     return new Response(request.method === "HEAD" ? null : page.body, {
