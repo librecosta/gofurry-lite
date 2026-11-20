@@ -8,6 +8,7 @@ import { href, labels, localized, type Locale, type Update, type View } from '..
 import { origin } from '../lib/routes'
 import { CatalogView } from './catalog-views'
 import { Breadcrumb, More, Title, t } from './elements'
+import { HomeGuide } from './home-guide'
 import { Icon } from './icons'
 import styles from './site.module.scss'
 
@@ -78,7 +79,10 @@ function Info({ locale, page }: { locale: Locale; page: keyof typeof statements 
 
 export function SitePage({ locale, segments }: { locale: Locale; segments: string[] }) {
   const [section, key, slug] = segments
-  if (segments.length === 0) return <CatalogRoute locale={locale} view={{ type: 'home' }} />
+  if (segments.length === 0) return <>
+    <CatalogRoute locale={locale} view={{ type: 'home' }} />
+    <HomeGuide locale={locale} />
+  </>
   if (section === 'status') {
     const gone = key === 'gone'
     return <article className={styles.readingPanel}>

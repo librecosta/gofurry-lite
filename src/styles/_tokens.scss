@@ -7,6 +7,9 @@
   --surface-strong: rgb(229 231 235 / 14%);
   --surface-hover: rgb(229 231 235 / 16%);
   --nav-surface: rgb(40 42 45 / 78%);
+  --mode-off: #98a2ad;
+  --mode-on: #9dc4aa;
+  --mode-wash: rgb(157 196 170 / 16%);
   --border: rgb(226 232 240 / 18%);
   --border-strong: rgb(226 232 240 / 28%);
   --text: rgb(248 250 252 / 94%);
@@ -31,6 +34,9 @@
   --surface-strong: rgb(255 250 242 / 88%);
   --surface-hover: rgb(255 239 213 / 72%);
   --nav-surface: rgb(255 250 242 / 78%);
+  --mode-off: #79746e;
+  --mode-on: #477456;
+  --mode-wash: rgb(71 116 86 / 12%);
   --border: rgb(126 92 58 / 16%);
   --border-strong: rgb(126 92 58 / 24%);
   --text: rgb(28 25 23 / 94%);
@@ -50,7 +56,7 @@
   --gutter: clamp(14px, 4vw, 46px);
   --content: 1360px;
   --motion: 160ms;
-  --nav-motion: 420ms;
+  --dock-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
 }
 
 @media (prefers-color-scheme: dark) {

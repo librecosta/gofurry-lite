@@ -11,8 +11,10 @@ html {
   line-height: 1.52;
   color: var(--text);
   background: var(--canvas);
-  scrollbar-color: var(--brand) transparent;
+  scrollbar-width: none;
 }
+
+html::-webkit-scrollbar { display: none; }
 
 body {
   position: relative;
@@ -81,18 +83,27 @@ h1, h2, h3 {
   border-radius: var(--r-sm);
 }
 
-@media (width > 1050px) {
+html[data-theme-reveal]::view-transition { pointer-events: none; }
+
+html[data-theme-reveal]::view-transition-group(root),
+html[data-theme-reveal]::view-transition-old(root),
+html[data-theme-reveal]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-theme-reveal]::view-transition-new(root) { clip-path: var(--theme-reveal-clip); }
+
+@media (width >= 768px) {
   html { scroll-padding-block-start: 76px; }
 }
 
-@media (width <= 1050px) {
+@media (width < 768px) {
   html { scroll-padding-block-end: calc(76px + env(safe-area-inset-bottom, 0px)); }
   body { padding-block-end: calc(76px + env(safe-area-inset-bottom, 0px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --nav-motion: 0ms; }
-
   *, *::before, *::after {
     scroll-behavior: auto !important;
     transition-duration: 0s !important;

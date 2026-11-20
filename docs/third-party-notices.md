@@ -12,3 +12,7 @@ Favicon、横向标识和符号直接复用新 GoFurry 品牌资源。Lite 分�
 底部导航的宽度展开和滑入标签参考随任务提供的 Expanding Icon Menu。原作者为 Uiverse 的 Admin12121，示例工程由 TuneShape contributors 提供，均适用 MIT 许可。 [原作者](https://uiverse.io/Admin12121/soft-falcon-79) · [MIT 许可](expanding-menu-license.txt)
 
 界面图标使用 Phosphor Icons for React。 [项目](https://github.com/phosphor-icons/react) · [MIT 许可](phosphor-icons-license.txt)
+
+页面阅读进度刻度改编自 TuneShape 的 Vertical Scroll Gauge，沿用其弹簧参数及轨道交互。 [原始实现](https://github.com/gofurry/TuneShape/blob/feat/scrolling-category/effects/src/VerticalScrollGaugePreview.tsx) · [TuneShape MIT 许可](expanding-menu-license.txt)
+
+界面交互动效使用 Motion for React。 [项目](https://motion.dev/docs/react) · [MIT 许可](motion-license.txt)

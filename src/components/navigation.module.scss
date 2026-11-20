@@ -1,7 +1,6 @@
 
 .header,
 .dock {
-  border: 1px solid var(--border);
   background: var(--nav-surface);
   backdrop-filter: blur(12px);
 }
@@ -10,7 +9,6 @@
   position: sticky;
   z-index: 20;
   inset-block-start: 0;
-  border-width: 0 0 1px;
 }
 
 .headerInner {
@@ -52,29 +50,27 @@
 .desktopNav {
   display: flex;
   align-items: center;
-  gap: clamp(5px, 1vw, 14px);
+  gap: clamp(2px, calc(2vw - 10px), 14px);
 }
 
 .headerAction,
 .menuTrigger {
+  --nav-emphasis: 0;
+
   display: inline-grid;
   place-items: center;
   min-width: 38px;
   min-height: 40px;
   padding-inline: 9px;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--brand) calc(var(--nav-emphasis) * 100%), var(--muted));
   border: 0;
   border-radius: var(--r-sm);
   background: transparent;
   font-size: .9rem;
   font-weight: 720;
   white-space: nowrap;
-  transition: color var(--nav-motion) ease, background-color var(--nav-motion) ease;
 
-  &:hover, &:focus-visible, &[aria-current], &[aria-expanded="true"] {
-    color: var(--brand);
-    background-color: var(--brand-soft);
-  }
+  &:disabled { cursor: default; }
 }
 
 .modeSwitch {
@@ -84,52 +80,52 @@
   grid-template-columns: repeat(2, 1fr);
   min-inline-size: 0;
   margin: 0 4px 0 0;
-  padding: 2px;
+  padding: 0;
   color: var(--muted);
-  border: 1px solid var(--border-strong);
-  border-radius: 99px;
-  background: var(--surface);
+  border: 0;
   font-size: .69rem;
   font-weight: 800;
-  transition: border-color var(--nav-motion) ease, background-color var(--nav-motion) ease;
-
-  &:hover, &:focus-within {
-    border-color: var(--brand);
-    background-color: var(--surface-hover);
-  }
-
-  &::before {
-    position: absolute;
-    inset: 2px auto 2px 2px;
-    width: calc(50% - 2px);
-    border-radius: inherit;
-    background: var(--action);
-    transition: transform var(--nav-motion) ease;
-    content: "";
-  }
-
-  &[data-mode="nsfw"]::before { transform: translateX(100%); }
 
   label {
     position: relative;
     cursor: pointer;
   }
 
-  span {
+  label span {
     display: grid;
-    padding: 5px 7px;
-    border-radius: 99px;
+    min-block-size: 38px;
+    padding-inline: 4px 26px;
+    border-radius: var(--r-sm);
     place-items: center;
-    transition: color var(--nav-motion) ease;
   }
 
-  label:hover span { color: var(--brand); }
-  input:checked + span { color: var(--action-text); }
+  label:last-child span { padding-inline: 26px 4px; }
+  &:disabled label { cursor: default; }
 
   input:focus-visible + span {
     outline: 2px solid var(--focus);
-    outline-offset: 2px;
+    outline-offset: -1px;
   }
+}
+
+.modeTrack {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 40px;
+  height: 20px;
+  border: 2px solid var(--mode-off);
+  border-radius: 99px;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.modeThumb {
+  position: absolute;
+  inset: 2px auto auto 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--mode-off);
 }
 
 .menuTrigger,
@@ -137,7 +133,7 @@
   display: none;
 }
 
-@media (width <= 1050px) {
+@media (width < 768px) {
   .header {
     position: relative;
     padding-block-start: env(safe-area-inset-top, 0);
@@ -155,82 +151,50 @@
     position: fixed;
     z-index: 30;
     inset-inline: 0;
-    inset-block-end: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    inset-block-end: var(--dock-bottom);
     display: flex;
     align-items: center;
     inline-size: max-content;
     max-inline-size: calc(100vw - 2 * var(--dock-edge));
     margin-inline: auto;
     padding: 5px;
-    visibility: hidden;
-    opacity: 0;
+    border: 1px solid var(--border);
     border-radius: var(--r-lg);
     box-shadow: var(--shadow);
-    transform: translateY(12px);
-    transition:
-      opacity var(--nav-motion) ease,
-      transform var(--nav-motion) ease,
-      visibility 0s linear var(--nav-motion);
     gap: 2px;
-    pointer-events: none;
 
-    &[data-visible] {
-      visibility: visible;
-      opacity: 1;
-      transform: translateY(0);
-      transition-delay: 0s;
-      pointer-events: auto;
-    }
+    &[inert] { pointer-events: none; }
   }
 
   /* The icon keeps its own column while the label and highlight slide into view. */
   .dockItem {
+    --nav-emphasis: 0;
+    --dock-active: 0;
+
     position: relative;
     display: flex;
     isolation: isolate;
     align-items: center;
     flex: 0 1 auto;
-    inline-size: var(--item-width);
+    inline-size: calc(var(--item-width) + var(--label-width) * var(--dock-expansion, 0));
     min-inline-size: var(--item-width);
     block-size: 44px;
     padding: 0;
     overflow: hidden;
-    color: var(--text);
+    color: color-mix(in srgb, var(--brand) calc(var(--nav-emphasis) * 100%), var(--text));
     border: 0;
     border-radius: var(--r-md);
-    background: transparent;
+    background: color-mix(in srgb, var(--brand-soft) calc(var(--dock-active) * 100%), transparent);
     text-align: start;
-    transition:
-      inline-size var(--nav-motion) cubic-bezier(.2, .8, .2, 1),
-      color var(--nav-motion) ease,
-      background-color var(--nav-motion) ease;
+  }
 
-    &::before {
-      position: absolute;
-      z-index: -1;
-      inset: 0;
-      border-radius: inherit;
-      background: var(--surface-hover);
-      transform: translateX(100%);
-      transition: transform var(--nav-motion) cubic-bezier(.2, .8, .2, 1);
-      content: "";
-    }
-
-    &[aria-current],
-    &[aria-checked="true"],
-    &[aria-pressed="true"] {
-      color: var(--brand);
-      background-color: var(--brand-soft);
-    }
-
-    &[data-expanded] {
-      inline-size: calc(var(--item-width) + var(--label-width));
-      color: var(--brand);
-
-      &::before { transform: translateX(0); }
-    }
-
-    &:active { background-color: var(--brand-soft); }
+  .dockHighlight {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--surface-hover);
+    pointer-events: none;
   }
 
   .dockIcon {
@@ -242,17 +206,9 @@
 
   .dockLabel {
     padding-inline-end: 3px;
-    opacity: 0;
     font-size: .7rem;
     font-weight: 770;
     white-space: nowrap;
-    transform: translateX(8px);
-    transition: opacity var(--nav-motion) ease, transform var(--nav-motion) cubic-bezier(.2, .8, .2, 1);
     pointer-events: none;
-  }
-
-  [data-expanded] .dockLabel {
-    opacity: 1;
-    transform: translateX(0);
   }
 }

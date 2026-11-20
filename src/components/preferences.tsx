@@ -1,7 +1,9 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import type { Locale, Rating } from '../lib/presentation'
+import { immediate, interaction, modeSpring } from './motion'
 import styles from './navigation.module.scss'
 
 const subscribers = new Set<() => void>()
@@ -35,7 +37,7 @@ function subscribeTheme(callback: () => void) {
 }
 
 export function useTheme() {
-  return useSyncExternalStore(subscribeTheme, currentTheme, () => 'light')
+  return useSyncExternalStore(subscribeTheme, currentTheme, () => null)
 }
 
 const ratingKey = 'gofurry-content-mode'
@@ -62,13 +64,24 @@ export function toggleContentMode() {
   setMode(currentMode() === 'sfw' ? 'nsfw' : 'sfw')
 }
 
-export function ContentModeSwitch({ locale }: { locale: Locale }) {
+export function ContentModeSwitch({ locale, disabled }: { locale: Locale; disabled: boolean }) {
   const mode = useContentMode()
-  return <fieldset className={styles.modeSwitch} data-mode={mode}>
+  const reduce = useReducedMotion()
+  const nsfw = mode === 'nsfw'
+  return <fieldset className={styles.modeSwitch} data-mode={mode} disabled={disabled}>
     <legend className="sr-only">{locale === 'zh' ? '内容展示模式' : 'Content display mode'}</legend>
+    <motion.span className={styles.modeTrack} aria-hidden="true" initial={false}
+      animate={{ borderColor: nsfw ? 'var(--mode-on)' : 'var(--mode-off)', backgroundColor: nsfw ? 'var(--mode-wash)' : 'transparent' }}
+      transition={reduce ? immediate : interaction}>
+      <motion.span className={styles.modeThumb} initial={false}
+        animate={{ x: nsfw ? 20 : 0, backgroundColor: nsfw ? 'var(--mode-on)' : 'var(--mode-off)' }}
+        transition={reduce ? immediate : { x: modeSpring, backgroundColor: interaction }} />
+    </motion.span>
     {(['sfw', 'nsfw'] as const).map((value) => <label key={value}>
       <input className="sr-only" type="radio" name="content-mode" value={value} checked={mode === value} onChange={() => setMode(value)} />
-      <span>{value.toUpperCase()}</span>
+      <motion.span initial={false} transition={reduce ? immediate : interaction}
+        animate={{ color: mode === value ? (nsfw ? 'var(--mode-on)' : 'var(--text)') : 'var(--muted)' }}
+        whileHover={{ color: value === 'nsfw' ? 'var(--mode-on)' : 'var(--text)' }}>{value.toUpperCase()}</motion.span>
     </label>)}
   </fieldset>
 }

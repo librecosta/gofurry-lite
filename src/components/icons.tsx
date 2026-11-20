@@ -4,6 +4,7 @@ import { BookOpenIcon } from '@phosphor-icons/react/dist/ssr/BookOpen'
 import { CalendarDotsIcon } from '@phosphor-icons/react/dist/ssr/CalendarDots'
 import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr/CaretRight'
 import { CompassIcon } from '@phosphor-icons/react/dist/ssr/Compass'
+import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/ssr/EnvelopeSimple'
 import { GameControllerIcon } from '@phosphor-icons/react/dist/ssr/GameController'
 import { GithubLogoIcon } from '@phosphor-icons/react/dist/ssr/GithubLogo'
 import { GlobeIcon } from '@phosphor-icons/react/dist/ssr/Globe'
@@ -40,6 +41,7 @@ const glyphs = {
   sun: SunIcon,
   moon: MoonIcon,
   discover: CompassIcon,
+  mail: EnvelopeSimpleIcon,
   github: GithubLogoIcon,
   language: TranslateIcon,
   safe: ShieldCheckIcon,

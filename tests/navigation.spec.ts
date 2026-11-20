@@ -25,12 +25,22 @@ test('desktop navigation keeps its required order and both themes remain translu
   const before = await header.evaluate((element) => ({
     background: getComputedStyle(element).backgroundColor,
     blur: getComputedStyle(element).backdropFilter,
+    border: getComputedStyle(element).borderBottomWidth,
   }))
   expect(before.background).toMatch(/rgba\(255, 250, 242, 0\.78\)/)
   expect(before.blur).toBe('blur(12px)')
+  expect(before.border).toBe('0px')
   const games = nav.getByRole('link', { name: 'Games' })
+  const normal = await games.evaluate((element) => getComputedStyle(element).color)
+  const active = await nav.getByRole('link', { name: 'Discover' }).evaluate((element) => getComputedStyle(element).color)
+  expect(normal).not.toBe(active)
   await games.hover()
-  expect(await games.evaluate((element) => getComputedStyle(element).transitionDuration)).toBe('0.42s, 0.42s')
+  await expect.poll(() => games.evaluate((element) => Number(getComputedStyle(element).getPropertyValue('--nav-emphasis')))).toBe(.56)
+  const hovered = await games.evaluate((element) => getComputedStyle(element).color)
+  expect(hovered).not.toBe(normal)
+  expect(hovered).not.toBe(active)
+  await expect(games).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await expect(nav.getByRole('link', { name: 'Discover' })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
 
   await page.evaluate(() => scrollTo(0, 540))
   await expect.poll(() => header.evaluate((element) => element.getBoundingClientRect().top)).toBe(0)
@@ -45,8 +55,26 @@ test('desktop navigation keeps its required order and both themes remain translu
   await expect(page.getByRole('navigation', { name: 'Bottom navigation' })).toHaveCount(0)
 })
 
-test('tablet dock expands on hover and keyboard focus, activates links, and dismisses at the top', async ({ page }) => {
+test('complete navigation stays visible at medium widths including 768px', async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 880 })
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  await page.goto('/en')
+  const header = page.getByRole('banner')
+  const nav = header.getByRole('navigation', { name: 'Primary navigation' })
+  await page.evaluate(() => scrollTo(0, 240))
+  for (const width of [820, 1024, 768]) {
+    await page.setViewportSize({ width, height: 768 })
+    await expect(nav.locator(':scope > *')).toHaveCount(6)
+    await expect(nav).toBeVisible()
+    await expect(header.getByRole('button', { name: 'Navigation menu' })).toBeHidden()
+    await expect(page.getByRole('navigation', { name: 'Bottom navigation' })).toHaveCount(0)
+    expect(await header.evaluate(element => element.getBoundingClientRect().top)).toBe(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+  }
+})
+
+test('small-screen dock expands on hover and keyboard focus, activates links, and dismisses at the top', async ({ page }) => {
+  await page.setViewportSize({ width: 767, height: 768 })
   await page.route(/steamstatic\.com/, (route) => route.abort())
   await page.goto('/en')
   const header = page.getByRole('banner')
@@ -56,9 +84,6 @@ test('tablet dock expands on hover and keyboard focus, activates links, and dism
   await expect(dock).toBeHidden()
   await expect(header.getByRole('navigation', { name: 'Primary navigation' })).toHaveCount(0)
 
-  await page.setViewportSize({ width: 1024, height: 768 })
-  await expect(trigger).toBeVisible()
-  await expect(dock).toBeHidden()
   await page.evaluate(() => scrollTo(0, 240))
   await expect(dock).toBeVisible()
   await expect(dock.locator('[data-dock-item]')).toHaveCount(7)
@@ -67,7 +92,6 @@ test('tablet dock expands on hover and keyboard focus, activates links, and dism
   const closedWidth = (await iconLink.boundingBox())!.width
   await iconLink.hover()
   await expect(iconLink).toHaveAttribute('data-expanded', 'true')
-  expect(await iconLink.evaluate((element) => getComputedStyle(element).transitionDuration)).toBe('0.42s, 0.42s, 0.42s')
   await expect.poll(async () => (await iconLink.boundingBox())!.width).toBeGreaterThan(closedWidth + 48)
   await dockFits(dock)
 
@@ -130,7 +154,7 @@ for (const width of [320, 390]) {
       const collections = dock.getByRole('link', { name: 'Collections' })
       await collections.focus()
       await expect(collections).toHaveAttribute('data-expanded', 'true')
-      expect(await collections.evaluate((link) => {
+      await expect.poll(() => collections.evaluate((link) => {
         const label = link.lastElementChild!.getBoundingClientRect()
         return label.right <= link.getBoundingClientRect().right + 0.5
       })).toBe(true)
@@ -146,6 +170,7 @@ for (const width of [320, 390]) {
       const theme = dock.getByRole('button', { name: 'Toggle light or dark theme' })
       await theme.tap()
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+      expect(await page.locator('html').getAttribute('data-theme-reveal')).toBeNull()
       await dock.getByRole('link', { name: '中文' }).tap()
       await expect(page).toHaveURL('/privacy')
       await expect(dock).toBeHidden()

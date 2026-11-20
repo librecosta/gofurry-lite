@@ -44,40 +44,6 @@
   min-width: 0;
 }
 
-.footer {
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-
-  > div {
-    @include frame;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px 24px;
-    flex-wrap: wrap;
-    padding-block: 20px;
-  }
-
-  nav {
-    display: flex;
-    gap: 6px 19px;
-    flex-wrap: wrap;
-
-    @include muted;
-  }
-
-  a:hover { color: var(--brand); }
-}
-
-.footerBrand {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: .88rem;
-  font-weight: 800;
-}
-
 .pageTitle {
   display: flex;
   align-items: flex-start;
