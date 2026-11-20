@@ -31,7 +31,7 @@ for (const width of [1440, 390]) {
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' })
     await page.route(/steamstatic\.com/, (route) => route.abort())
     await page.goto('/')
-    await page.evaluate(() => scrollTo(0, 190))
+    await page.evaluate((width) => scrollTo(0, width < 768 ? 90 : 190), width)
     const trigger = page.getByRole('button', { name: 'Toggle light or dark theme' })
     await expect(trigger).toBeEnabled()
     const scrollBefore = await page.evaluate(() => scrollY)

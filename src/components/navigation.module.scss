@@ -143,7 +143,8 @@
   translate: 0 -50%;
 }
 
-.menuTrigger,
+.mobileControls,
+.mobileMenu,
 .dock {
   display: none;
 }
@@ -154,13 +155,52 @@
     padding-block-start: env(safe-area-inset-top, 0);
   }
 
+  .headerInner { gap: 4px; }
   .desktopNav { display: none; }
-  .menuTrigger { display: inline-grid; }
+
+  .mobileControls {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+
+    .modeSwitch { margin: 0; }
+    .menuTrigger { min-width: 34px; padding-inline: 4px; }
+  }
+
+  .mobileMenu {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline: 0;
+    display: block;
+    overflow: clip;
+    background: light-dark(var(--guide-surface), var(--input));
+    box-shadow: 0 8px 20px rgb(12 14 18 / 10%);
+  }
+
+  .mobileMenuLinks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px var(--gutter) 16px;
+    gap: 0 clamp(3px, 1.4vw, 12px);
+
+    .headerAction {
+      display: inline-flex;
+      justify-content: center;
+      min-width: 32px;
+      padding-inline: 5px;
+
+      &:focus-visible { outline-offset: -2px; }
+    }
+  }
+
+  .menuExternal { gap: 5px; }
 
   .dock {
-    --item-width: clamp(30px, 9vw, 52px);
+    --item-width: clamp(44px, 11vw, 52px);
     --dock-edge: max(8px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-    --label-width: clamp(0px, calc(100vw - 7 * var(--item-width) - 24px - 2 * var(--dock-edge)), 74px);
+    --label-width: clamp(0px, calc(100vw - 3 * var(--item-width) - 16px - 2 * var(--dock-edge)), 74px);
 
     position: fixed;
     z-index: 30;

@@ -1,17 +1,18 @@
 
 'use client'
 
-import { useEffect, useRef, useState, type KeyboardEvent, type Ref } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react'
 import { AnimatePresence, motion, useIsPresent, useReducedMotion, type MotionStyle, type Target } from 'motion/react'
 import { github } from '../lib/links'
 import { href, type Locale } from '../lib/presentation'
 import { Icon, type Glyph } from './icons'
 import { immediate, interaction } from './motion'
-import { ContentModeSwitch, toggleContentMode, toggleTheme, useContentMode, useTheme } from './preferences'
+import { ContentModeSwitch, toggleTheme, useTheme } from './preferences'
 import { revealTheme } from './theme-reveal'
 import styles from './navigation.module.scss'
 
 const dockId = 'mobile-navigation'
+const menuId = 'mobile-header-navigation'
 const hoverInk = { '--nav-hover': 1 } as Target
 const hoverTheme = { ...hoverInk, '--nav-button-fill': 1 } as Target
 const destinations = [
@@ -44,21 +45,16 @@ function dockKey(target: EventTarget | null) {
   return target instanceof Element ? target.closest<HTMLElement>('[data-dock-item]')?.dataset.dockItem : undefined
 }
 
-function MobileDock({ locale, path, languageUrl, dockRef, close }: {
+function MobileDock({ locale, path, dockRef }: {
   locale: Locale
   path: string
-  languageUrl: string
   dockRef: Ref<HTMLElement>
-  close: () => void
 }) {
   const [highlighted, setHighlighted] = useState<string>()
   const present = useIsPresent()
   const reduced = useReducedMotion()
   const transition = reduced ? immediate : interaction
-  const dark = useTheme() === 'dark'
-  const mode = useContentMode()
   const zh = locale === 'zh'
-  const language = zh ? 'EN' : '中文'
 
   function props(key: string, active = false) {
     const expanded = highlighted === key
@@ -81,7 +77,6 @@ function MobileDock({ locale, path, languageUrl, dockRef, close }: {
   function onKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === 'Escape') {
       setHighlighted(undefined)
-      close()
       return
     }
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
@@ -121,21 +116,20 @@ function MobileDock({ locale, path, languageUrl, dockRef, close }: {
         {label(item.key, item.icon, item[locale])}
       </motion.a>
     })}
-    <motion.button {...props('mode', mode === 'nsfw')} type="button" role="switch" aria-checked={mode === 'nsfw'}
-      aria-label={zh ? 'NSFW 内容' : 'NSFW content'} onClick={toggleContentMode}>
-      {label('mode', mode === 'nsfw' ? 'adult' : 'safe', mode.toUpperCase())}
-    </motion.button>
-    <motion.button {...props('theme', dark)} type="button" aria-pressed={dark}
-      aria-label={zh ? '切换亮暗主题' : 'Toggle light or dark theme'} onClick={(event) => revealTheme(event.currentTarget, toggleTheme)}>
-      {label('theme', dark ? 'sun' : 'moon', dark ? (zh ? '亮色' : 'Light') : (zh ? '暗色' : 'Dark'))}
-    </motion.button>
-    <motion.a {...props('language')} href={languageUrl} lang={zh ? 'en' : 'zh-CN'} aria-label={language}>
-      {label('language', 'language', language)}
-    </motion.a>
-    <motion.a {...props('github')} href={github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-      {label('github', 'github', 'GitHub')}
-    </motion.a>
   </motion.nav>
+}
+
+function MobileMenu({ locale, children }: { locale: Locale; children: ReactNode }) {
+  const present = useIsPresent()
+  const reduced = useReducedMotion()
+  const collapsed = { height: 0, opacity: 0 }
+  return <motion.div className={styles.mobileMenu} id={menuId} inert={!present}
+    initial={reduced ? false : collapsed} animate={{ height: 'auto', opacity: 1 }}
+    exit={collapsed} transition={reduced ? immediate : interaction}>
+    <nav className={styles.mobileMenuLinks} aria-label={locale === 'zh' ? '展开导航' : 'Expanded navigation'}>
+      {children}
+    </nav>
+  </motion.div>
 }
 
 export function SiteNavigation({ locale, path }: { locale: Locale; path: string }) {
@@ -144,7 +138,6 @@ export function SiteNavigation({ locale, path }: { locale: Locale; path: string 
   const trigger = useRef<HTMLButtonElement>(null)
   const [pastHeader, setPastHeader] = useState(false)
   const [opened, setOpened] = useState(false)
-  const visible = pastHeader || opened
   const theme = useTheme()
   const dark = theme === 'dark'
   const ready = theme !== null
@@ -171,14 +164,26 @@ export function SiteNavigation({ locale, path }: { locale: Locale; path: string 
     }
   }, [])
 
-  function closeDock() {
-    if (!opened || pastHeader) return
-    trigger.current?.focus({ preventScroll: true })
-    setOpened(false)
-  }
+  const links = destinations.map((item) =>
+    <motion.a key={item.key} className={styles.headerAction} href={href(locale, item.path)}
+      aria-current={currentLocation(item.path, path)} initial={false} whileHover={hoverInk} whileFocus={hoverInk}
+      transition={transition}>{item[locale]}</motion.a>)
+  const preferences = <>
+    <motion.button className={styles.headerAction + ' ' + styles.themeAction} type="button" aria-pressed={dark} disabled={!ready}
+      aria-label={zh ? '切换亮暗主题' : 'Toggle light or dark theme'} onClick={(event) => revealTheme(event.currentTarget, toggleTheme)}
+      initial={false} whileHover={hoverTheme} whileFocus={hoverTheme} transition={transition}>
+      <Icon name={dark ? 'sun' : 'moon'} />
+    </motion.button>
+    <motion.a className={styles.headerAction} href={languageUrl} lang={zh ? 'en' : 'zh-CN'}
+      initial={false} whileHover={hoverInk} whileFocus={hoverInk} transition={transition}>{zh ? 'EN' : '中文'}</motion.a>
+  </>
 
   return <>
-    <header className={styles.header} ref={header}>
+    <header className={styles.header} ref={header} onKeyDown={(event) => {
+      if (!opened || event.key !== 'Escape') return
+      setOpened(false)
+      trigger.current?.focus({ preventScroll: true })
+    }}>
       <div className={styles.headerInner}>
         <a href={href(locale)} className={styles.wordmark} aria-label="GoFurry Lite">
           <span className={styles.wordmarkArtwork} aria-hidden="true" />
@@ -186,29 +191,31 @@ export function SiteNavigation({ locale, path }: { locale: Locale; path: string 
         </a>
         <nav aria-label={zh ? '主导航' : 'Primary navigation'} className={styles.desktopNav}>
           <ContentModeSwitch locale={locale} disabled={!ready} />
-          {destinations.map((item) => {
-            const current = currentLocation(item.path, path)
-            return <motion.a key={item.key} className={styles.headerAction} href={href(locale, item.path)}
-              aria-current={current} initial={false} whileHover={hoverInk} whileFocus={hoverInk}
-              transition={transition}>{item[locale]}</motion.a>
-          })}
-          <motion.button className={styles.headerAction + ' ' + styles.themeAction} type="button" aria-pressed={dark} disabled={!ready}
-            aria-label={zh ? '切换亮暗主题' : 'Toggle light or dark theme'} onClick={(event) => revealTheme(event.currentTarget, toggleTheme)}
-            initial={false} whileHover={hoverTheme} whileFocus={hoverTheme} transition={transition}>
-            <Icon name={dark ? 'sun' : 'moon'} />
-          </motion.button>
-          <motion.a className={styles.headerAction} href={languageUrl} lang={zh ? 'en' : 'zh-CN'}
-            initial={false} whileHover={hoverInk} whileFocus={hoverInk} transition={transition}>{zh ? 'EN' : '中文'}</motion.a>
+          {links}
+          {preferences}
         </nav>
-        <motion.button ref={trigger} type="button" className={styles.menuTrigger} aria-controls={visible ? dockId : undefined} disabled={!ready}
-          aria-label={zh ? '导航菜单' : 'Navigation menu'} aria-expanded={visible} onClick={() => setOpened(!opened)}
-          initial={false} whileHover={hoverInk} whileFocus={hoverInk} transition={transition}>
-          <Icon name={visible ? 'close' : 'menu'} size={22} />
-        </motion.button>
+        <div className={styles.mobileControls}>
+          <ContentModeSwitch locale={locale} disabled={!ready} />
+          <motion.button ref={trigger} type="button" className={styles.menuTrigger} aria-controls={opened ? menuId : undefined} disabled={!ready}
+            aria-label={zh ? '导航菜单' : 'Navigation menu'} aria-expanded={opened} onClick={() => setOpened(!opened)}
+            initial={false} whileHover={hoverInk} whileFocus={hoverInk} transition={transition}>
+            <Icon name={opened ? 'close' : 'menu'} size={22} />
+          </motion.button>
+        </div>
       </div>
+      <AnimatePresence initial={false}>
+        {opened && <MobileMenu locale={locale}>
+          {links}
+          <motion.a className={styles.headerAction + ' ' + styles.menuExternal} href={github}
+            target="_blank" rel="noopener noreferrer" initial={false} whileHover={hoverInk} whileFocus={hoverInk} transition={transition}>
+            GitHub <Icon name="external" size={14} />
+          </motion.a>
+          {preferences}
+        </MobileMenu>}
+      </AnimatePresence>
     </header>
     <AnimatePresence initial={false}>
-      {visible && <MobileDock locale={locale} path={path} languageUrl={languageUrl} dockRef={dock} close={closeDock} />}
+      {pastHeader && <MobileDock locale={locale} path={path} dockRef={dock} />}
     </AnimatePresence>
   </>
 }

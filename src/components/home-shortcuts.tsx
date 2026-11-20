@@ -1,12 +1,15 @@
 'use client'
 
-import { AnimatePresence, motion, useReducedMotion, useSpring } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion, useSpring, type Target } from 'motion/react'
 import Image from 'next/image'
 import { useState, type PointerEvent } from 'react'
-import type { Locale } from '../lib/presentation'
+import { href, type Locale } from '../lib/presentation'
 import { ChannelLink, contactChannels } from './channel-links'
 import { Icon } from './icons'
-import { easeOut, immediate } from './motion'
+import { easeOut, immediate, interaction } from './motion'
+import { toggleTheme, useTheme } from './preferences'
+import { revealTheme } from './theme-reveal'
+import channelStyles from './footer.module.scss'
 import styles from './home.module.scss'
 
 const previewImages: Record<string, string> = {
@@ -17,12 +20,16 @@ const previewImages: Record<string, string> = {
 }
 
 const tiltSpring = { stiffness: 320, damping: 30, mass: .65 }
+const controlHover = { '--footer-hover': 1 } as Target
 const normalizeOffset = (position: number, extent: number) => Math.max(-1, Math.min(1, 2 * position / extent - 1))
 
 export function HomeShortcuts({ locale }: { locale: Locale }) {
   const [hovered, setHovered] = useState<string>()
   const [focused, setFocused] = useState<string>()
   const reduced = useReducedMotion()
+  const theme = useTheme()
+  const dark = theme === 'dark'
+  const zh = locale === 'zh'
   const x = useSpring(0, tiltSpring)
   const y = useSpring(0, tiltSpring)
   const rotate = useSpring(0, tiltSpring)
@@ -54,7 +61,12 @@ export function HomeShortcuts({ locale }: { locale: Locale }) {
     ...contactChannels(locale).map(({ icon, ...channel }) => ({ ...channel, artwork: <Icon name={icon} size={23} /> })),
   ]
 
-  return <nav className={styles.shortcuts} aria-label={locale === 'zh' ? '项目与联系方式' : 'Projects and contact'}
+  const control = {
+    className: channelStyles.channel + ' ' + styles.shortcutControl,
+    whileHover: controlHover, whileFocus: controlHover, transition: reduced ? immediate : interaction,
+  }
+
+  return <nav className={styles.shortcuts} aria-label={zh ? '项目与联系方式' : 'Projects and contact'}
     onKeyDown={(event) => {
       if (event.key === 'Escape') {
         setHovered(undefined)
@@ -62,7 +74,8 @@ export function HomeShortcuts({ locale }: { locale: Locale }) {
         resetTilt()
       }
     }}>
-    {shortcuts.map(({ id, url, label, artwork }) => <span key={id} className={styles.shortcut}
+    {shortcuts.map(({ id, url, label, artwork }) => <span key={id}
+      className={styles.shortcut + (id === 'email' ? ' ' + styles.desktopShortcut : '')}
       onPointerEnter={(event) => {
         if (event.pointerType !== 'touch') setHovered(id)
       }}
@@ -77,6 +90,15 @@ export function HomeShortcuts({ locale }: { locale: Locale }) {
       onBlur={() => setFocused(undefined)}>
       <ChannelLink url={url} label={label} nativeTooltip={false}>{artwork}</ChannelLink>
     </span>)}
+    <motion.button {...control} type="button" disabled={theme === null} aria-pressed={dark}
+      aria-label={zh ? '切换亮暗主题' : 'Toggle light or dark theme'}
+      onClick={(event) => revealTheme(event.currentTarget, toggleTheme)}>
+      <Icon name={dark ? 'sun' : 'moon'} size={22} />
+    </motion.button>
+    <motion.a {...control} href={href(zh ? 'en' : 'zh')} lang={zh ? 'en' : 'zh-CN'}
+      aria-label={zh ? 'English' : '中文'}>
+      <Icon name="language" size={22} />
+    </motion.a>
 
     <AnimatePresence initial={false}>
       {active && <motion.div key={active} className={styles.previewAnchor} aria-hidden="true" data-shortcut-preview={active}

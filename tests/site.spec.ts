@@ -497,7 +497,7 @@ test('home game rotation stays stable within a visit and draws from the selected
   expect(errors).toEqual([])
 })
 
-for (const [width, cardColumns, entryColumns, gameColumns] of [[1440, 4, 1, 4], [820, 1, 3, 3], [680, 1, 3, 2], [375, 1, 2, 1], [320, 1, 1, 1]]) {
+for (const [width, cardColumns, entryColumns, gameColumns] of [[1440, 4, 1, 4], [820, 1, 2, 3], [680, 1, 1, 2], [375, 1, 1, 1], [320, 1, 1, 1]]) {
   test('responsive layouts at ' + width + 'px', async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.route('https://**/*.jpg', (route) => route.abort())
@@ -513,6 +513,11 @@ for (const [width, cardColumns, entryColumns, gameColumns] of [[1440, 4, 1, 4], 
         const list = grid.locator('[data-category-scroll]').first()
         expect(await list.locator('ol').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(entryColumns)
         expect(await list.evaluate((node) => node.scrollWidth - node.clientWidth)).toBe(0)
+        if (width < 1050) {
+          await expect(list.locator('a:not([target])').first()).toHaveCSS('font-size', '15px')
+          await expect(list.locator('li').first()).toHaveCSS('min-height', '36px')
+          await expect(list.locator('a[target="_blank"]').first()).toHaveCSS('width', '36px')
+        }
         const homeGames = page.locator('[data-home-games]')
         await expect(homeGames.locator('a[data-search-id]')).toHaveCount(12)
         expect(await homeGames.evaluate((node) => {
