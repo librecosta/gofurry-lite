@@ -76,7 +76,7 @@ export function ContentModeSwitch({ locale, disabled }: { locale: Locale; disabl
       setMode(event.key === 'ArrowRight' ? 'nsfw' : 'sfw')
     }}>
     <motion.span className={styles.modeTrack} aria-hidden="true" initial={false}
-      animate={{ borderColor: nsfw ? 'var(--mode-on)' : 'var(--mode-off)', backgroundColor: nsfw ? 'var(--mode-wash)' : 'transparent' }}
+      animate={{ '--mode-accent': nsfw ? 1 : 0 } as Target}
       transition={reduce ? immediate : interaction}>
       {(['sfw', 'nsfw'] as const).map((value) => <motion.span key={value} className={styles.modeLabel}
         data-mode-label={value} initial={false} animate={{ opacity: mode === value ? 1 : 0 }}
@@ -84,8 +84,8 @@ export function ContentModeSwitch({ locale, disabled }: { locale: Locale; disabl
         {value.toUpperCase()}
       </motion.span>)}
       <motion.span className={styles.modeThumb} initial={false}
-        animate={{ '--mode-thumb-position': nsfw ? 1 : 0, backgroundColor: nsfw ? 'var(--mode-on)' : 'var(--mode-off)' } as Target}
-        transition={reduce ? immediate : { default: modeSpring, backgroundColor: interaction }} />
+        animate={{ '--mode-thumb-position': nsfw ? 1 : 0 } as Target}
+        transition={reduce ? immediate : modeSpring} />
     </motion.span>
   </button>
 }

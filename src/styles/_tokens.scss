@@ -11,6 +11,8 @@
   --copyright-surface: #271f1b;
   --footer-ink: #e7d9ce;
   --footer-hover-ink: #ffbb91;
+  --footer-icon-surface: #4c3a30;
+  --footer-icon-hover: #6b4b3a;
   --nav-surface: rgb(40 42 45 / 78%);
   --nav-hover-ink: #ffd5b8;
   --nav-button-hover: rgb(253 186 140 / 19%);
@@ -27,7 +29,9 @@
   --action-hover: #fed7aa;
   --action-text: #29180e;
   --input: #26282c;
-  --dot: rgb(193 197 203 / 16%);
+  --dot: rgb(193 197 203 / 18%);
+  --dot-medium: rgb(193 197 203 / 12%);
+  --dot-small: rgb(193 197 203 / 8%);
   --shadow: 0 18px 44px rgb(0 0 0 / 28%);
 }
 
@@ -45,6 +49,8 @@
   --copyright-surface: #d9b79d;
   --footer-ink: #4d3225;
   --footer-hover-ink: #7a260f;
+  --footer-icon-surface: #f3ddca;
+  --footer-icon-hover: #f1c4a5;
   --nav-surface: rgb(255 250 242 / 78%);
   --nav-hover-ink: #a73c10;
   --nav-button-hover: rgb(160 74 24 / 16%);
@@ -61,7 +67,9 @@
   --action-hover: #63270f;
   --action-text: #fffaf2;
   --input: rgb(255 250 242 / 91%);
-  --dot: rgb(128 108 88 / 20%);
+  --dot: rgb(88 97 107 / 20%);
+  --dot-medium: rgb(88 97 107 / 13%);
+  --dot-small: rgb(88 97 107 / 10%);
   --shadow: 0 18px 44px rgb(126 92 58 / 12%);
   --r-sm: 8px;
   --r-md: 12px;

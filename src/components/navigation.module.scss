@@ -85,6 +85,7 @@
   --mode-border: 2px;
   --mode-inset: 3px;
   --mode-thumb-size: 16px;
+  --mode-thumb-edge: calc(var(--mode-inset) + var(--mode-thumb-size));
   --mode-travel: calc(var(--mode-width) - 2 * var(--mode-border) - 2 * var(--mode-inset) - var(--mode-thumb-size));
 
   display: inline-grid;
@@ -103,26 +104,30 @@
 }
 
 .modeTrack {
+  --mode-accent: 0;
+  --mode-ink: color-mix(in srgb, var(--mode-on) calc(var(--mode-accent) * 100%), var(--mode-off));
+
   position: relative;
   width: 100%;
   height: 26px;
-  border: var(--mode-border) solid var(--mode-off);
+  border: var(--mode-border) solid var(--mode-ink);
   border-radius: 99px;
+  background-color: color-mix(in srgb, var(--mode-wash) calc(var(--mode-accent) * 100%), transparent);
   pointer-events: none;
 }
 
 .modeLabel {
   position: absolute;
   inset-block: 0;
-  inset-inline-end: var(--mode-inset);
+  inset-inline: var(--mode-thumb-edge) 0;
   display: grid;
-  width: 50%;
   font-size: .72rem;
   font-weight: 800;
+  line-height: 1;
   place-items: center;
 
   &[data-mode-label="nsfw"] {
-    inset-inline: var(--mode-inset) auto;
+    inset-inline: 0 var(--mode-thumb-edge);
     color: var(--mode-on);
   }
 }
@@ -133,7 +138,7 @@
   width: var(--mode-thumb-size);
   height: var(--mode-thumb-size);
   border-radius: 50%;
-  background: var(--mode-off);
+  background: var(--mode-ink);
   transform: translateX(calc(var(--mode-travel) * var(--mode-thumb-position, 0)));
   translate: 0 -50%;
 }

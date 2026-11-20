@@ -17,11 +17,36 @@
 
 .channels { gap: 10px; }
 
+.channel,
+.textLink {
+  --footer-hover: 0;
+
+  color: color-mix(in srgb, var(--footer-hover-ink) calc(var(--footer-hover) * 100%), var(--footer-ink));
+}
+
 .channel {
   display: grid;
   width: 42px;
   height: 42px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--footer-icon-hover) calc(var(--footer-hover) * 100%), var(--footer-icon-surface));
   place-items: center;
+}
+
+.textLink {
+  position: relative;
+  display: inline-block;
+  padding-block-end: 4px;
+
+  &::after {
+    position: absolute;
+    inset: auto 0 1px;
+    height: 3px;
+    background: currentcolor;
+    transform: scaleX(var(--footer-hover));
+    content: "";
+    pointer-events: none;
+  }
 }
 
 .links {
@@ -29,7 +54,7 @@
   font-size: .88rem;
   text-align: center;
 
-  a { padding-block: 6px; }
+  .textLink { padding-block: 6px; }
 }
 
 .copyright {

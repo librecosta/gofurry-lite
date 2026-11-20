@@ -25,16 +25,56 @@ body {
   margin: 0;
 }
 
-body::before {
+/* Tool4Furry's vertical mask combines with an independent fade on each side. */
+.page-dots {
   position: fixed;
   z-index: -1;
   inset: 0 0 auto;
-  height: min(540px, 70vh);
-  background-image: radial-gradient(circle at center, var(--dot) 1px, transparent 1.1px);
-  background-size: 30px 30px;
-  mask-image: linear-gradient(#000, transparent);
-  content: "";
+  height: min(720px, 100svh);
+  mask-image: linear-gradient(to bottom, #000 18%, transparent);
   pointer-events: none;
+
+  &::before, &::after {
+    position: absolute;
+    inset-block: 0;
+    width: min(30%, 460px);
+    color: var(--dot);
+    background-image: radial-gradient(circle, currentcolor 1.1px, transparent 1.1px);
+    background-size: 30px 30px;
+    content: "";
+  }
+
+  &::before {
+    inset-inline-start: 0;
+    mask-image: linear-gradient(to right, #000 15%, transparent);
+  }
+
+  &::after {
+    inset-inline-end: 0;
+    background-position: right top;
+    mask-image: linear-gradient(to left, #000 15%, transparent);
+  }
+}
+
+@media (768px <= width < 1280px) {
+  .page-dots::before, .page-dots::after { color: var(--dot-medium); }
+}
+
+@media (width < 768px) {
+  .page-dots {
+    height: min(185px, 100svh);
+    mask-image: linear-gradient(to bottom, #000, transparent);
+
+    &::before {
+      width: 100%;
+      color: var(--dot-small);
+      background-image: radial-gradient(circle, currentcolor .8px, transparent .8px);
+      background-size: 28px 28px;
+      mask-image: none;
+    }
+
+    &::after { display: none; }
+  }
 }
 
 a {

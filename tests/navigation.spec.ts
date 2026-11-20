@@ -45,12 +45,24 @@ test('desktop navigation keeps its required order and both themes remain translu
 
   await page.evaluate(() => scrollTo(0, 540))
   await expect.poll(() => header.evaluate((element) => element.getBoundingClientRect().top)).toBe(0)
-  const dotLayer = await page.evaluate(() => {
-    const style = getComputedStyle(document.body, '::before')
-    return { position: style.position, top: style.top, pointerEvents: style.pointerEvents, mask: style.maskImage }
+  const dotLayer = await page.locator('.page-dots').evaluate((element) => {
+    const style = getComputedStyle(element)
+    const left = getComputedStyle(element, '::before')
+    const right = getComputedStyle(element, '::after')
+    return {
+      position: style.position, top: style.top, pointerEvents: style.pointerEvents, height: style.height, mask: style.maskImage,
+      left: { edge: left.left, width: left.width, mask: left.maskImage, spacing: left.backgroundSize },
+      right: { edge: right.right, width: right.width, mask: right.maskImage, spacing: right.backgroundSize },
+    }
   })
-  expect(dotLayer).toMatchObject({ position: 'fixed', top: '0px', pointerEvents: 'none' })
-  expect(dotLayer.mask).toContain('linear-gradient')
+  expect(dotLayer).toMatchObject({
+    position: 'fixed', top: '0px', pointerEvents: 'none', height: '720px',
+    left: { edge: '0px', width: '432px', spacing: '30px 30px' },
+    right: { edge: '0px', width: '432px', spacing: '30px 30px' },
+  })
+  expect(dotLayer.mask).toContain('18%')
+  expect(dotLayer.left.mask).toMatch(/linear-gradient\((?:90deg|to right),/)
+  expect(dotLayer.right.mask).toMatch(/linear-gradient\((?:270deg|to left),/)
   const theme = nav.getByRole('button', { name: 'Toggle light or dark theme' })
   await theme.hover()
   await expect.poll(() => theme.evaluate((element) => Number(getComputedStyle(element).getPropertyValue('--nav-button-fill')))).toBe(1)
@@ -154,6 +166,12 @@ for (const width of [320, 390]) {
       await expect(artwork.first()).toHaveCSS('height', '34.5px')
       await expect(artwork.last()).toHaveCSS('height', '34.5px')
       expect((await artwork.first().boundingBox())?.y).toBe((await artwork.last().boundingBox())?.y)
+      const dots = page.locator('.page-dots')
+      await expect(dots).toHaveCSS('height', '185px')
+      expect(await dots.evaluate((element) => ({
+        spacing: getComputedStyle(element, '::before').backgroundSize,
+        rightDisplay: getComputedStyle(element, '::after').display,
+      }))).toEqual({ spacing: '28px 28px', rightDisplay: 'none' })
       await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /viewport-fit=cover/)
       await expect(dock).toBeHidden()
       await menu.tap()

@@ -22,6 +22,7 @@ import { TranslateIcon } from '@phosphor-icons/react/dist/ssr/Translate'
 import { UsersIcon } from '@phosphor-icons/react/dist/ssr/Users'
 import { WrenchIcon } from '@phosphor-icons/react/dist/ssr/Wrench'
 import { XIcon } from '@phosphor-icons/react/dist/ssr/X'
+import { XLogoIcon } from '@phosphor-icons/react/dist/ssr/XLogo'
 
 const glyphs = {
   search: MagnifyingGlassIcon,
@@ -43,6 +44,7 @@ const glyphs = {
   discover: CompassIcon,
   mail: EnvelopeSimpleIcon,
   github: GithubLogoIcon,
+  'x-logo': XLogoIcon,
   language: TranslateIcon,
   safe: ShieldCheckIcon,
   adult: ShieldWarningIcon,
