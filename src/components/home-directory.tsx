@@ -1,35 +1,27 @@
 import { categories, type CategoryCode } from '../lib/categories'
 import { href, inCategory, intro, localized, ordered, type DirectorySite, type Locale } from '../lib/presentation'
 import type { ReactNode } from 'react'
+import { ChannelLink, ContactLinks } from './channel-links'
 import { t } from './elements'
-import { Icon, type Glyph } from './icons'
+import { Icon } from './icons'
 import { Media } from './media'
 import styles from './home.module.scss'
 
-const projects = [
-  { name: 'GoFurry', url: 'https://gofurry.com', icon: 'discover', en: 'The main GoFurry project', zh: 'GoFurry 主站' },
-  { name: 'Tool4Furry', url: 'https://tool4furry.com', icon: 'tool', en: 'Tools for the furry community', zh: '面向兽圈的实用工具' },
-  { name: 'GopherAtlas', url: 'https://gopheratlas.com', icon: 'book', en: 'Go programming guides and notes', zh: 'Go 开发指南与笔记' },
-] satisfies { name: string; url: string; icon: Glyph; en: string; zh: string }[]
-
 export function HomeLead({ locale, search }: { locale: Locale; search: ReactNode }) {
-  return <div className={styles.lead}>
-    <aside className={styles.projects} aria-labelledby="ecosystem-title">
-      <h2 id="ecosystem-title">{t(locale, 'GoFurry 生态', 'GoFurry ecosystem')}</h2>
-      <ul>
-        {projects.map(({ name, url, icon, ...description }) => <li key={name}>
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            <span className={styles.projectIcon}><Icon name={icon} size={16} /></span>
-            <span className={styles.projectCopy}><strong>{name}</strong><span>{description[locale]}</span></span>
-            <Icon name="external" size={15} />
-          </a>
-        </li>)}
-      </ul>
-    </aside>
-    <div className={styles.discovery}>
-      <h1>{intro[locale].title}</h1>
-      <p>{intro[locale].description}</p>
+  return <div className={styles.discovery}>
+    <h1>{intro[locale].title}</h1>
+    <p>{intro[locale].description}</p>
+    <div className={styles.leadActions}>
       {search}
+      <nav className={styles.shortcuts} aria-label={t(locale, '项目与联系方式', 'Projects and contact')}>
+        <ChannelLink url="https://gofurry.com" label="GoFurry">
+          <span className={styles.projectMark + ' ' + styles.gofurryMark} aria-hidden="true" />
+        </ChannelLink>
+        <ChannelLink url="https://tool4furry.com" label="Tool4Furry">
+          <span className={styles.projectMark + ' ' + styles.tool4furryMark} aria-hidden="true" />
+        </ChannelLink>
+        <ContactLinks locale={locale} />
+      </nav>
     </div>
   </div>
 }

@@ -116,11 +116,16 @@ test('homepage floating search handles the outline notch, IME and clear controls
   await page.goto('/zh')
   const input = page.getByRole('searchbox', { name: '搜索兽圈网站' })
   const wrapper = input.locator('..')
+  const outline = wrapper.locator('fieldset')
   const notch = wrapper.locator('legend')
   const firstCharacter = wrapper.locator('label span[aria-hidden] > span').first()
+  await expect(outline).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
+  await expect(outline).toHaveCSS('transition-duration', '0.42s')
   await expect(notch).toHaveCSS('max-inline-size', '0px')
   await expect(firstCharacter).toHaveCSS('transform', 'none')
   await input.focus()
+  await expect(outline).toHaveCSS('border-top-width', '2px')
+  await expect(outline).toHaveCSS('border-top-color', 'rgb(203, 92, 37)')
   await expect(notch).toHaveCSS('max-inline-size', '100%')
   await expect(firstCharacter).not.toHaveCSS('transform', 'none')
   await expect(wrapper.locator('label span[aria-hidden] > span').nth(1)).toHaveCSS('transition-delay', '0.007s')
@@ -144,18 +149,32 @@ test('homepage floating search handles the outline notch, IME and clear controls
   await input.press('Escape')
   await expect(input).toHaveValue('')
   await expect(page.locator('[data-category-grid]')).toBeVisible()
+  await input.blur()
+  await expect(outline).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
 })
 
 test('all homepage category members render with mode-specific counts and separately actionable links', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 840 })
   await page.route(/steamstatic\.com/, (route) => route.abort())
   await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Discover furry websites')
+  const shortcuts = page.getByRole('navigation', { name: 'Projects and contact' })
+  await expect(shortcuts.getByRole('link')).toHaveCount(5)
   for (const [name, url] of [
-    ['GoFurry', 'https://gofurry.com'], ['Tool4Furry', 'https://tool4furry.com'], ['GopherAtlas', 'https://gopheratlas.com'],
+    ['GoFurry', 'https://gofurry.com'], ['Tool4Furry', 'https://tool4furry.com'],
+    ['GitHub', 'https://github.com/librecosta/gofurry-lite'], ['X @LibreCostaHQ', 'https://x.com/LibreCostaHQ'],
   ]) {
-    const link = page.getByRole('complementary', { name: 'GoFurry ecosystem' }).getByRole('link', { name: new RegExp('^' + name) })
+    const link = shortcuts.getByRole('link', { name, exact: true })
     await expect(link).toHaveAttribute('href', url)
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    await expect(link).toHaveCSS('border-top-width', '0px')
+    await expect(link).toHaveCSS('border-radius', '50%')
+  }
+  await expect(shortcuts.getByRole('link', { name: /Email LibreCosta/ })).toHaveAttribute('href', 'mailto:contact@librecosta.com')
+  for (const [name, symbol] of [['GoFurry', 'gofurry-symbol.svg'], ['Tool4Furry', 'tool4furry-symbol.svg']]) {
+    const mark = shortcuts.getByRole('link', { name, exact: true }).locator('span')
+    expect(await mark.evaluate((node) => getComputedStyle(node).maskImage)).toContain('/media/brand/' + symbol)
+    expect((await page.request.get('/media/brand/' + symbol)).ok()).toBe(true)
   }
 
   const codes = [...new Set(Object.values(classifications).map(({ primary }) => primary))]
@@ -225,10 +244,13 @@ for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 2, 2], [37
         expect(await list.locator('ul').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(entryColumns)
         expect(await list.evaluate((node) => node.scrollWidth - node.clientWidth)).toBe(0)
 
-        const ecosystem = (await page.locator('aside').first().boundingBox())!
+        const shortcuts = (await page.getByRole('navigation', { name: /Projects and contact|项目与联系方式/ }).boundingBox())!
         const search = (await page.getByRole('searchbox').boundingBox())!
-        if (width < 768) expect(ecosystem.y + ecosystem.height).toBeLessThan(search.y)
-        else expect(search.x + search.width).toBeLessThan(ecosystem.x)
+        if (width < 768) expect(search.y + search.height).toBeLessThan(shortcuts.y)
+        else {
+          expect(search.x + search.width).toBeLessThan(shortcuts.x)
+          expect(search.y + search.height / 2).toBeCloseTo(shortcuts.y + shortcuts.height / 2, 0)
+        }
       }
     }
   })

@@ -1,18 +1,5 @@
-.lead {
-  display: grid;
-  grid-template-columns: minmax(0, 1.28fr) minmax(0, 1fr);
-  grid-template-areas: 'discovery projects';
-  align-items: center;
-  column-gap: clamp(24px, 5vw, 72px);
-  reading-flow: grid-rows;
-}
-
 .discovery {
-  grid-area: discovery;
-  min-width: 0;
-
   h1 {
-    max-width: 22ch;
     font-size: clamp(1.65rem, 3.15vw, 2.65rem);
     font-weight: 850;
     letter-spacing: -.035em;
@@ -26,64 +13,30 @@
   }
 }
 
-.projects {
-  grid-area: projects;
-  min-width: 0;
-  padding: 10px 12px 7px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  background: var(--surface);
-
-  h2 {
-    padding: 3px 6px 7px;
-    color: var(--muted);
-    font-size: .82rem;
-    font-weight: 780;
-  }
-
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  li + li { border-top: 1px solid var(--border); }
-
-  a {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 9px;
-    min-height: 39px;
-    padding: 5px 6px;
-    border-radius: var(--r-sm);
-    transition: background-color var(--motion), color var(--motion);
-
-    > svg { color: var(--muted); }
-    &:is(:hover, :focus-visible) { color: var(--brand); background: var(--surface-hover); }
-  }
-}
-
-.projectIcon {
+.leadActions {
   display: grid;
-  place-items: center;
-  width: 27px;
-  height: 27px;
-  color: var(--brand);
-  background: var(--brand-soft);
-  border-radius: var(--r-sm);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px clamp(16px, 3vw, 42px);
 }
 
-.projectCopy {
+.shortcuts {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  column-gap: 9px;
-  overflow-wrap: anywhere;
-
-  strong { font-size: .9rem; }
-  > span { color: var(--muted); font-size: .78rem; }
+  justify-content: center;
+  gap: 10px;
 }
+
+.projectMark {
+  width: 26px;
+  height: 26px;
+  background-color: currentcolor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+.gofurryMark { mask-image: url('/media/brand/gofurry-symbol.svg'); }
+.tool4furryMark { mask-image: url('/media/brand/tool4furry-symbol.svg'); }
 
 .floatingSearch {
   --search-height: 60px;
@@ -122,14 +75,14 @@
   inset: -.5em 0 0;
   min-inline-size: 0;
   margin: 0;
-  padding: 0 38px;
-  border: 1px solid var(--border-strong);
+  padding: 0 37px;
+  border: 2px solid transparent;
   border-radius: inherit;
   pointer-events: none;
   font-size: .8rem;
   font-weight: 750;
   line-height: 1;
-  transition: border-color var(--motion);
+  transition: border-color 420ms cubic-bezier(.2, .8, .2, 1);
 
   legend {
     max-inline-size: 0;
@@ -348,12 +301,7 @@
 }
 
 @media (width < 768px) {
-  .lead {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'projects' 'discovery';
-    gap: 20px;
-  }
-
+  .leadActions { grid-template-columns: minmax(0, 1fr); }
   .categoryGrid { grid-template-columns: minmax(0, 1fr); }
   .categoryCard { height: 236px; }
 }

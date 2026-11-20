@@ -27,7 +27,7 @@ export type View =
 
 export const intro = {
   zh: { title: '发现值得探索的兽圈网站', description: '社区、创作、文学、工具、游戏与活动，一站发现。' },
-  en: { title: 'Discover furry websites worth exploring', description: 'Find furry communities, art, writing, tools, games and events.' },
+  en: { title: 'Discover furry websites', description: 'Find furry communities, art, writing, tools, games and events.' },
 }
 
 export const labels = {
