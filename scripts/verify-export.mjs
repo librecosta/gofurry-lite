@@ -6,6 +6,8 @@ const read = (name) => readFile(new URL('../' + name, import.meta.url), 'utf8')
 const manifest = JSON.parse(await read('src/generated/worker.json'))
 const out = resolve('out')
 const expected = new Set(manifest.pages)
+const restricted = new Set(manifest.restrictedPaths)
+const ordinary = new Set(manifest.pages.filter((path) => !restricted.has(path)))
 const errors = ['404', 'en/status/not-found', 'en/status/gone', 'status/not-found', 'status/gone', '_not-found', '_global-error']
 for (const path of expected) {
   const filename = path === '/' ? '/index.html' : path + '.html'
@@ -16,6 +18,15 @@ for (const path of expected) {
   assert(html.includes('rel="canonical" href="https://go-furry.com' + path + '"'), path)
   assert(html.includes('hrefLang="zh-CN"') && html.includes('hrefLang="en"'), path)
   assert(html.includes('property="og:title"'), path)
+  assert(html.includes('https://go-furry.com/media/brand/gofurry-lite-og.png'), path)
+  assert(html.includes('name="twitter:card" content="summary_large_image"'), path)
+  assert.equal(html.includes('name="robots" content="noindex, nofollow"'), restricted.has(path), path)
+  const localPath = path.replace(/^\/en(?=\/|$)/, '') || '/'
+  if (localPath === '/' || /^(?:\/categories\/|\/site-groups(?:\/|$)|\/games(?:$|\/collections(?:\/|$)))/.test(localPath)) {
+    for (const [, link] of html.matchAll(/href="((?:\/en)?\/(?:site|games)\/\d+)"/g)) {
+      assert(!restricted.has(link), path + ' lists ' + link)
+    }
+  }
 }
 
 let checked = 0
@@ -42,9 +53,13 @@ async function walk(directory) {
 await walk(out)
 const map = await read('out/sitemap.xml')
 const urls = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
-assert.equal(urls.length, expected.size)
-assert(urls.every((url) => expected.has(url.slice('https://go-furry.com'.length))))
+assert.equal(new Set(urls).size, ordinary.size)
+assert.equal(urls.length, ordinary.size)
+assert(urls.every((url) => ordinary.has(url.slice('https://go-furry.com'.length))))
 for (const file of ['robots.txt', 'status/gone.html', 'status/not-found.html', 'en/status/gone.html', 'en/status/not-found.html']) {
   assert((await stat(resolve(out, file))).isFile(), file)
 }
-console.log('Verified', expected.size, 'bilingual HTML pages and', checked, 'text assets.')
+const og = await readFile(resolve(out, 'media/brand/gofurry-lite-og.png'))
+assert.equal(og.readUInt32BE(16), 1200)
+assert.equal(og.readUInt32BE(20), 630)
+console.log('Verified', ordinary.size, 'indexable HTML pages,', restricted.size, 'gated HTML pages and', checked, 'text assets.')

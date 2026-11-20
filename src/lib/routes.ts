@@ -1,39 +1,27 @@
 import type { Metadata } from 'next'
 import { categories } from './categories'
-import { catalog, sites, games, siteById, gameById, localized, steamCover } from './catalog'
-import type { Locale } from './catalog'
+import { catalog, sites, games, siteById, gameById } from './catalog'
+import { href, intro, labels, localized, type Locale } from './presentation'
 
 export const origin = 'https://go-furry.com'
-export const intro = {
-  zh: { title: '发现值得探索的兽圈网站', description: '社区、创作、文学、工具、游戏与活动，一站发现。' },
-  en: { title: 'Discover furry websites worth exploring', description: 'Find furry communities, art, writing, tools, games and events.' },
-}
-
-export const labels = {
-  zh: { games: '兽游目录', collections: '游戏合集', updates: '更新日志', about: '关于', privacy: '隐私政策', terms: '使用条款', 'site-groups': '历史分组' },
-  en: { games: 'Games', collections: 'Collections', updates: 'Updates', about: 'About', privacy: 'Privacy', terms: 'Terms', 'site-groups': 'Legacy groups' },
-}
-
-export function href(locale: Locale, path = '/') {
-  return locale === 'zh' ? path : '/en' + (path === '/' ? '' : path)
-}
+export { href } from './presentation'
 
 const landingPages = ['games', 'games/collections', 'updates', 'about', 'privacy', 'terms', 'site-groups']
   .map((page) => '/' + page)
-export function publicPaths() {
+export function publicPaths(includeNsfw = false) {
   return [
     '/', ...landingPages,
     ...categories.map(([code]) => '/categories/' + code),
-    ...sites.map(({ id }) => '/site/' + id),
+    ...sites.filter((site) => includeNsfw || site.rating === 'sfw').map(({ id }) => '/site/' + id),
     ...catalog.groups.map(({ id }) => '/site-groups/' + id),
-    ...games.map(({ id }) => '/games/' + id),
+    ...games.filter((game) => includeNsfw || game.rating === 'sfw').map(({ id }) => '/games/' + id),
     ...catalog.collections.map(({ code }) => '/games/collections/' + code),
     ...catalog.updates.map(({ id }) => '/updates/' + id),
   ]
 }
 
 export function buildParams() {
-  return [...publicPaths(), '/status/not-found', '/status/gone'].map((path) => ({ path: path.split('/').filter(Boolean) }))
+  return [...publicPaths(true), '/status/not-found', '/status/gone'].map((path) => ({ path: path.split('/').filter(Boolean) }))
 }
 
 export function metadataFor(locale: Locale, segments: string[]): Metadata {
@@ -42,18 +30,20 @@ export function metadataFor(locale: Locale, segments: string[]): Metadata {
   const content = landingPages.includes(path) ? labels[locale][segments.at(-1) as keyof typeof labels.en] : undefined
   let title = content ?? intro[locale].title
   let description = intro[locale].description
-  let image = origin + '/favicon.svg'
+  const image = origin + '/media/brand/gofurry-lite-og.png'
   const [section, key, slug] = segments
   const record = section === 'site' ? siteById.get(Number(key))
     : section === 'games' && key === 'collections' ? catalog.collections.find((item) => item.code === slug)
     : section === 'games' ? gameById.get(Number(key))
     : section === 'site-groups' ? catalog.groups.find((item) => item.id === Number(key))
     : section === 'updates' ? catalog.updates.find((item) => item.id === Number(key)) : undefined
-  if (record) {
+  const restricted = record && 'rating' in record && record.rating === 'nsfw'
+  if (restricted) {
+    title = locale === 'zh' ? 'NSFW 内容' : 'NSFW content'
+    description = locale === 'zh' ? '开启 NSFW 模式可查看这条历史资料。' : 'Enable NSFW mode to view this archived entry.'
+  } else if (record) {
     title = localized(record.title, locale)
     description = (localized(record.description, locale) || description).replace(/\s+/g, ' ').slice(0, 170)
-    if ('logo' in record && record.logo) image = origin + record.logo
-    if ('appId' in record) image = record.cover || steamCover(record.appId)
   } else if (section === 'categories') {
     const category = categories.find(([code]) => code === key)
     if (category) {
@@ -65,8 +55,10 @@ export function metadataFor(locale: Locale, segments: string[]): Metadata {
   const canonical = origin + href(locale, path)
   title += ' · GoFurry Lite'
   return {
-    title, description, icons: '/favicon.svg',
+    title, description, icons: '/media/brand/gofurry-favicon.png',
+    ...(restricted && { robots: { index: false, follow: false } }),
     alternates: { canonical, languages: { 'zh-CN': origin + path, en: origin + href('en', path) } },
-    openGraph: { title, description, url: canonical, siteName: 'GoFurry Lite', type: 'website', locale: locale === 'zh' ? 'zh_CN' : 'en_US', images: [image] },
+    openGraph: { title, description, url: canonical, siteName: 'GoFurry Lite', type: 'website', locale: locale === 'zh' ? 'zh_CN' : 'en_US', images: [{ url: image, width: 1200, height: 630, alt: 'GoFurry Lite' }] },
+    twitter: { card: 'summary_large_image', title, description, images: [image] },
   }
 }

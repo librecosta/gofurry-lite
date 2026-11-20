@@ -12,7 +12,8 @@ ARCHIVES = {
     'seed': '3df0e552df2dd4fb5af2e5db2d6cd1d5431c0e815648a455e33413321d5fd401',
 }
 SECTIONS = {
-    'gfn': ('gfn_site', 'gfn_site_group_map', 'gfn_nav_update_notice'),
+    'gfn': ('gfn_site', 'gfn_site_group_map', 'gfn_nav_update_notice',
+            'gfn_collector_domain', 'gfn_site_primary_target_periods', 'gfn_target_tracking_periods'),
     'gfg': ('gfg_game', 'gfg_game_details', 'gfg_game_localized_details', 'gfg_game_assets'),
 }
 

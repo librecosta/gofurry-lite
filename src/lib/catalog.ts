@@ -1,32 +1,30 @@
+
 import 'server-only'
 import data from '../../content/catalog/catalog.json'
 import policy from '../../content/curation/publication.json'
-import approved from '../../content/curation/site-categories.json'
-import { categories, type CategoryCode } from './categories'
+import ordinary from '../generated/directory.json'
+import type { Collection, Directory, Game, Group, Site, Tag, Update, View } from './presentation'
+import { inCategory } from './presentation'
 
-export type Locale = 'zh' | 'en'
-export type Translation = { zh: string; en: string }
-export type Copy = { title: Translation; description: Translation }
-export type Site = Copy & { id: number; groups: number[]; logo?: string; url?: string; priority?: number }
-export type Group = Copy & { id: number; members: number[] }
-export type Game = Copy & {
-  id: number
-  appId: number
-  cover?: string
-  body?: Translation
-  developers: string[]
-  publishers: string[]
-  platforms: string[]
-  screenshots: string[]
-  release?: string
-  tags: { id: number; role: string }[]
-}
-export type Tag = { id: number; code: string; category: string; title: Translation }
-export type Collection = Copy & { id: number; code: string; members: number[] }
-export type Update = Copy & { id: number; date: string; version: string; commit: string; body: Translation }
+export type { Locale } from './presentation'
+
 type Catalog = { sites: Site[]; groups: Group[]; games: Game[]; tags: Tag[]; collections: Collection[]; updates: Update[]; featuredGames: number[] }
+type FrozenCatalog = Omit<Catalog, 'sites' | 'games'> & {
+  sites: (Omit<Site, 'rating'> & { rating: string })[]
+  games: (Omit<Game, 'rating'> & { rating: string })[]
+}
 
-export const catalog: Catalog = data
+function rating(value: string) {
+  if (value === 'sfw' || value === 'nsfw') return value
+  throw new Error('Invalid frozen rating')
+}
+
+const frozen: FrozenCatalog = data
+export const catalog: Catalog = {
+  ...frozen,
+  sites: frozen.sites.map((site) => ({ ...site, rating: rating(site.rating) })),
+  games: frozen.games.map((game) => ({ ...game, rating: rating(game.rating) })),
+}
 
 const publicSiteIds = new Set(policy.siteIds)
 const publicGameIds = new Set(policy.gameIds)
@@ -34,20 +32,74 @@ export const sites = catalog.sites.filter(({ id }) => publicSiteIds.has(id))
 export const games = catalog.games.filter(({ id }) => publicGameIds.has(id))
 export const siteById = new Map(sites.map((site) => [site.id, site]))
 export const gameById = new Map(games.map((game) => [game.id, game]))
-export const tagsById = new Map(catalog.tags.map((tag) => [tag.id, tag]))
-const isCategory = (value: string): value is CategoryCode => categories.some(([code]) => code === value)
-export const categoriesBySite: Partial<Record<string, { primary: CategoryCode; secondary: CategoryCode[] }>> =
-  Object.fromEntries(Object.entries(approved).flatMap(([id, { primary, secondary }]) =>
-    isCategory(primary) ? [[id, { primary, secondary: secondary.filter(isCategory) }]] : []))
+const adultTag = catalog.tags.find(({ code }) => code === 'adult')?.id
 
-export function localized(value: Translation, locale: Locale) {
-  return value[locale] || value[locale === 'zh' ? 'en' : 'zh']
+export function initialDetail(view: View): Site | Game | undefined {
+  if (view.type === 'site') {
+    const site = siteById.get(view.id)
+    if (site?.rating === 'sfw') {
+      const { id, title, description, rating, groups, logo, url } = site
+      return { id, title, description, rating, groups, logo, url }
+    }
+  }
+  if (view.type === 'game') {
+    const game = gameById.get(view.id)
+    if (game?.rating === 'sfw') return { ...game, tags: game.tags.filter(({ id }) => id !== adultTag) }
+  }
 }
 
-export function ordered<T extends Copy>(entries: T[], locale: Locale) {
-  return [...entries].sort((first, next) => localized(first.title, locale).localeCompare(localized(next.title, locale), locale === 'zh' ? 'zh-CN' : 'en'))
-}
+// prepare.mjs validates the snapshot before projecting the default presentation data.
+const directory = ordinary as Directory
 
-export function steamCover(appId: number) {
-  return 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/' + appId + '/header.jpg'
+export function initialDirectory(view: View): Directory {
+  const result: Directory = { sites: [], games: [], groups: [], collections: [], tags: [], featuredGames: [] }
+  switch (view.type) {
+    case 'home':
+      result.sites = directory.sites
+      result.games = directory.games.filter((game) => directory.featuredGames.slice(0, 4).includes(game.id))
+      result.tags = directory.tags
+      result.featuredGames = directory.featuredGames
+      break
+    case 'category':
+      result.sites = directory.sites.filter((site) => inCategory(site, view.code))
+      break
+    case 'group':
+      result.groups = directory.groups.filter((group) => group.id === view.id)
+      result.sites = directory.sites.filter((site) => site.groups.includes(view.id))
+      break
+    case 'groups':
+      result.groups = directory.groups
+      break
+    case 'site': {
+      const site = directory.sites.find(({ id }) => id === view.id)
+      if (site) {
+        result.sites = directory.sites.filter((item) => item.id === view.id || inCategory(item, site.category.primary))
+        result.groups = directory.groups.filter(({ id }) => site.groups.includes(id))
+      }
+      break
+    }
+    case 'games':
+      result.games = directory.games
+      result.tags = directory.tags
+      result.collections = directory.collections.slice(0, 3)
+      break
+    case 'collections':
+      result.collections = directory.collections
+      result.games = directory.games.filter(({ id }) => directory.collections.some((item) => item.members[0] === id))
+      break
+    case 'collection':
+      result.collections = directory.collections.filter((item) => item.code === view.code)
+      result.games = directory.games.filter(({ id }) => result.collections[0]?.members.includes(id))
+      result.tags = directory.tags.filter(({ id }) => result.games.some((game) => game.tags.some((tag) => tag.id === id)))
+      break
+    case 'game': {
+      const game = directory.games.find(({ id }) => id === view.id)
+      if (game) {
+        result.collections = directory.collections.filter((item) => item.members.includes(game.id))
+        result.tags = directory.tags.filter(({ id }) => game.tags.some((tag) => tag.id === id))
+      }
+      break
+    }
+  }
+  return result
 }

@@ -1,7 +1,9 @@
 import manifest from '../src/generated/worker.json'
 
 const pages = new Set(manifest.pages)
+const restrictedPaths = new Set(manifest.restrictedPaths)
 const deletedSites = new Set(manifest.deletedSites.map(String))
+const deletedGames = new Set(manifest.deletedGames.map(String))
 
 interface Bindings {
   ASSETS: { fetch(request: Request): Promise<Response> }
@@ -30,7 +32,8 @@ function retired(path: string) {
   if (['/insights', '/games/prize', '/games/prize/activation', '/about/faolan'].includes(path)) return true
   if (path.startsWith('/insights/')) return true
   const site = path.match(/^\/site\/([1-9]\d*)$/)
-  return site ? deletedSites.has(site[1]) : false
+  const game = path.match(/^\/games\/([1-9]\d*)$/)
+  return Boolean((site && deletedSites.has(site[1])) || (game && deletedGames.has(game[1])))
 }
 
 export default {
@@ -53,6 +56,7 @@ export default {
     const target = routeLegacy(localPath)
     const canonical = prefix + (target === '/' && en ? '' : target)
 
+    if (path === '/favicon.ico' || path === '/favicon.svg') return redirect(url, '/media/brand/gofurry-favicon.png')
     if (path === '/healthz') {
       if (isWww || path !== rawPath) return redirect(url, path)
       return new Response(request.method === 'GET' ? 'ok\n' : null, {
@@ -62,14 +66,15 @@ export default {
     if (pages.has(canonical)) {
       if (isWww || canonical !== rawPath) return redirect(url, canonical)
       const asset = canonical === '/' ? '/index.html' : canonical + '.html'
-      return fetchAsset(env.ASSETS, request, asset)
+      const response = await fetchAsset(env.ASSETS, request, asset)
+      return restrictedPaths.has(canonical) ? noindex(response) : response
     }
     if (localPath === '/410' || retired(target)) return error(410)
     // HTML pages are available only through the publication manifest.
-    if (/^\/(?:_next|media|indexes)\//.test(rawPath) || ['/robots.txt', '/sitemap.xml', '/favicon.svg'].includes(rawPath)) {
+    if (/^\/(?:_next|media|indexes)\//.test(rawPath) || ['/robots.txt', '/sitemap.xml'].includes(rawPath)) {
       if (isWww) return redirect(url, rawPath)
       const asset = await env.ASSETS.fetch(request)
-      if (asset.status !== 404) return asset
+      if (asset.status !== 404) return rawPath.startsWith('/indexes/extended/') ? noindex(asset) : asset
     }
     return error(404)
 
@@ -82,3 +87,9 @@ export default {
     }
   },
 } satisfies { fetch(request: Request, env: Bindings): Promise<Response> }
+
+function noindex(response: Response) {
+  const headers = new Headers(response.headers)
+  headers.set('x-robots-tag', 'noindex')
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
+}

@@ -25,11 +25,13 @@ test('bilingual static HTML, canonical links, sitemap and ordinary search indexe
   expect(await (await request.get('/robots.txt')).text()).toContain('https://go-furry.com/sitemap.xml')
   const sitemap = await (await request.get('/sitemap.xml')).text()
   expect(sitemap).toContain('https://go-furry.com/en/site/105')
-  expect(sitemap).not.toContain('https://go-furry.com/site/156')
+  expect(sitemap).toContain('https://go-furry.com/site/156')
+  expect(sitemap).not.toContain('https://go-furry.com/site/101<')
   const ordinary = await (await request.get('/indexes/sites-en.json')).json() as unknown[][]
-  expect(ordinary.length).toBe(192)
-  expect(ordinary.some(([id]) => id === 156 || id === 101)).toBe(false)
-  expect((await (await request.get('/indexes/games-zh.json')).json()).length).toBe(198)
+  expect(ordinary.length).toBe(197)
+  expect(ordinary.some(([id]) => id === 156)).toBe(true)
+  expect(ordinary.some(([id]) => id === 101)).toBe(false)
+  expect((await (await request.get('/indexes/games-zh.json')).json()).length).toBe(203)
 })
 
 test('Workers return historical redirects, 404, 410, and HEAD', async ({ request }) => {
@@ -42,12 +44,12 @@ test('Workers return historical redirects, 404, 410, and HEAD', async ({ request
     expect(response.status(), path).toBe(301)
     expect(response.headers().location).toBe('http://127.0.0.1:8787' + target)
   }
-  for (const path of ['/site/999999', '/en/sites/183', '/games/999999', '/site/156', '/site/101', '/site/105.html', '/gfn.dump', '/.local/l1-c2-a/candidates.ndjson']) {
+  for (const path of ['/site/999999', '/en/sites/183', '/games/999999', '/site/105.html', '/gfn.dump', '/.local/l1-c2-a/candidates.ndjson']) {
     const response = await request.get(path, { maxRedirects: 0 })
     expect(response.status(), path).toBe(404)
     expect(response.headers()['x-robots-tag']).toBe('noindex')
   }
-  for (const path of ['/insights', '/en/insights/stats', '/site/142', '/en/games/prize/activation', '/games/prize', '/about/faolan']) {
+  for (const path of ['/insights', '/en/insights/stats', '/site/142', '/games/355', '/en/games/355', '/en/games/prize/activation', '/games/prize', '/about/faolan']) {
     const response = await request.get(path, { maxRedirects: 0 })
     expect(response.status(), path).toBe(410)
     expect(await response.text()).toContain('410')
@@ -59,7 +61,9 @@ test('Workers return historical redirects, 404, 410, and HEAD', async ({ request
   expect(www.headers().location).toBe('https://go-furry.com/en/games/102?from=legacy')
   expect(await (await request.head('/games/102')).text()).toBe('')
   expect((await request.post('/')).status()).toBe(405)
-  expect((await request.get('/media/brand/logo.svg')).status()).toBe(200)
+  for (const asset of ['gofurry-favicon.png', 'gofurry-horizontal.svg', 'gofurry-symbol.svg', 'gofurry-lite-og.png']) {
+    expect((await request.get('/media/brand/' + asset)).status(), asset).toBe(200)
+  }
 })
 
 test('search, game category and species filters, and locale continuity', async ({ page }) => {
@@ -67,8 +71,8 @@ test('search, game category and species filters, and locale continuity', async (
   await page.goto('/en')
   const input = page.getByRole('searchbox')
   await input.fill('wilddream')
-  await expect(page.getByRole('status')).toHaveText('1 result')
-  await page.locator('[data-results="sites"] a').filter({ visible: true }).first().click()
+  await expect(page.getByRole('status')).toHaveText(/^\d+ results?$/)
+  await page.locator('[data-results="sites"] a[href="/en/site/105"]').click()
   await expect(page).toHaveURL('/en/site/105')
   await page.getByRole('link', { name: '中文', exact: true }).click()
   await expect(page).toHaveURL('/site/105')
@@ -141,4 +145,118 @@ test('theme persists, keyboard focus is visible, reduced motion and broken image
   await expect(page.getByRole('img', { name: 'Threefold Recital' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'View on Steam' })).toBeVisible()
   expect(await page.getByRole('link', { name: /^Open screenshot/ }).count()).toBeLessThanOrEqual(6)
+})
+
+
+test('the browser uses the self-hosted Chinese and English variable fonts', async ({ page }) => {
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  const remoteFonts: string[] = []
+  page.on('request', (request) => {
+    if (request.resourceType() === 'font' && !request.url().startsWith('http://127.0.0.1:8787/')) remoteFonts.push(request.url())
+  })
+  const session = await page.context().newCDPSession(page)
+  await session.send('DOM.enable')
+  await session.send('CSS.enable')
+  for (const [path, family] of [['/', /Noto Sans SC/i], ['/en', /Manrope/i]] as const) {
+    await page.goto(path)
+    await page.evaluate(() => document.fonts.ready.then(() => true))
+    const { root } = await session.send('DOM.getDocument')
+    const { nodeId } = await session.send('DOM.querySelector', { nodeId: root.nodeId, selector: 'main h1' })
+    const { fonts } = await session.send('CSS.getPlatformFontsForNode', { nodeId })
+    expect(fonts.some((font) => family.test(font.familyName) && font.isCustomFont && font.glyphCount > 0), JSON.stringify(fonts)).toBe(true)
+  }
+  expect(remoteFonts).toEqual([])
+})
+
+test('the two modes reuse real home, category, group, game and collection data', async ({ page }) => {
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  const requested: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/indexes/extended/')) requested.push(request.url())
+  })
+  await page.goto('/en')
+  const modes = page.getByRole('group', { name: 'Content display mode' })
+  const sfw = modes.getByRole('radio', { name: 'SFW', exact: true })
+  const nsfw = modes.getByRole('radio', { name: 'NSFW', exact: true })
+  await expect(sfw).toBeChecked()
+  await page.getByRole('searchbox').fill('FurAffinity')
+  await expect(page.getByRole('status')).toHaveText(/^\d+ results?$/)
+  await expect(page.locator('[data-results="sites"] a[href="/en/site/101"]')).toHaveCount(0)
+  expect(requested).toEqual([])
+  await sfw.focus()
+  await sfw.press('ArrowRight')
+  await expect(nsfw).toBeChecked()
+  await expect(page.locator('[data-results="sites"] a[href="/en/site/101"]')).toContainText('NSFW')
+  await page.reload()
+  await expect(nsfw).toBeChecked()
+  await page.getByRole('link', { name: '中文', exact: true }).click()
+  await expect(page.getByRole('radio', { name: 'NSFW', exact: true })).toBeChecked()
+  await expect(page).toHaveURL('/')
+
+  await page.goto('/en/categories/gallery')
+  await expect(page.locator('[data-results="sites"] a[href="/en/site/101"]')).toBeVisible()
+  await page.goto('/en/site-groups/100')
+  await expect(page.locator('[data-results="sites"] a[href="/en/site/101"]')).toBeVisible()
+
+  await page.goto('/en/games')
+  const restored = catalog.games.find(({ rating }) => rating === 'nsfw')!
+  const games = page.locator('[data-results="games"] [data-search-id]')
+  await expect(games).toHaveCount(261)
+  await page.getByRole('searchbox').fill(restored.title.en || restored.title.zh)
+  await expect(page.locator('a[href="/en/games/' + restored.id + '"]')).toContainText('NSFW')
+  await page.getByRole('searchbox').clear()
+  await modes.getByText('SFW', { exact: true }).click()
+  await expect(games).toHaveCount(203)
+  await expect(page.locator('a[href="/en/games/' + restored.id + '"]')).toHaveCount(0)
+  await page.getByRole('searchbox').fill('Changed')
+  await expect(page.locator('a[href="/en/games/101"]')).toBeVisible()
+
+  const collection = catalog.collections.find(({ members }) => members.includes(restored.id))!
+  const adultIds = new Set(catalog.games.filter(({ rating }) => rating === 'nsfw').map(({ id }) => id))
+  const normalSize = collection.members.filter((id) => !adultIds.has(id)).length
+  await page.goto('/en/games/collections/' + collection.code)
+  await expect(page.locator('[data-search-id]')).toHaveCount(normalSize)
+  await modes.getByText('NSFW', { exact: true }).click()
+  await expect(page.locator('[data-search-id]')).toHaveCount(collection.members.length)
+})
+
+test('known adult historical details return a gated document and load only after enabling NSFW', async ({ page, request }) => {
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  const game = catalog.games.find(({ rating }) => rating === 'nsfw')!
+  for (const path of ['/en/site/101', '/en/games/' + game.id]) {
+    const response = await request.get(path)
+    expect(response.status()).toBe(200)
+    expect(response.headers()['x-robots-tag']).toBe('noindex')
+    const html = await response.text()
+    expect(html).toContain('name="robots" content="noindex, nofollow"')
+    expect(html).toContain('Enable NSFW mode in the header')
+  }
+  await page.goto('/en/site/101')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('NSFW content')
+  await expect(page.getByRole('link', { name: 'Visit website' })).toHaveCount(0)
+  const modes = page.getByRole('group', { name: 'Content display mode' })
+  await modes.getByText('NSFW', { exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('FurAffinity')
+  await expect(page.getByRole('link', { name: 'Visit website' })).toHaveAttribute('href', 'https://www.furaffinity.net/')
+  await page.goto('/en/games/' + game.id)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(game.title.en || game.title.zh)
+  await modes.getByText('SFW', { exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('NSFW content')
+})
+
+test('verified site links open directly and unrelated historical IDs retain distinct identities', async ({ page }) => {
+  for (const [id, url] of [
+    [225, 'https://furryweekend.com/'], [270, 'https://furryweekend.com/'],
+    [293, 'https://www.furfest.org/'], [334, 'https://www.tasfurry.com/'],
+  ] as const) {
+    await page.goto('/en/site/' + id)
+    await expect(page).toHaveURL('/en/site/' + id)
+    const link = page.getByRole('link', { name: 'Visit website' })
+    await expect(link).toHaveAttribute('href', url)
+    await expect(link).toHaveAttribute('target', '_blank')
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  }
+  await page.goto('/en/site/135')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('FurryFusion')
+  await expect(page.getByRole('link', { name: 'Visit website' })).toHaveCount(0)
 })

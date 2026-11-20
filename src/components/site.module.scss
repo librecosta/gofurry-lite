@@ -50,7 +50,7 @@
   white-space: nowrap;
 
   img {
-    width: clamp(29px, 4vw, 36px);
+    width: clamp(84px, 15vw, 138px);
     height: auto;
   }
 
@@ -76,6 +76,65 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
+}
+
+.modeSwitch {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  grid-template-columns: repeat(2, 1fr);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 2px;
+  color: var(--muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 99px;
+  background: var(--surface);
+  font-size: .69rem;
+  font-weight: 800;
+
+  &::before {
+    position: absolute;
+    inset: 2px auto 2px 2px;
+    width: calc(50% - 2px);
+    border-radius: inherit;
+    background: var(--action);
+    transition: transform var(--motion) ease;
+    content: "";
+  }
+
+  &[data-mode="nsfw"]::before { transform: translateX(100%); }
+
+  label {
+    position: relative;
+    cursor: pointer;
+  }
+
+  span {
+    display: grid;
+    padding: 4px 6px;
+    border-radius: 99px;
+    place-items: center;
+  }
+
+  input:checked + span { color: var(--action-text); }
+
+  input:focus-visible + span {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+.ratingBadge {
+  display: inline-block;
+  margin-inline-start: .45em;
+  padding: 1px 5px;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border-radius: var(--r-sm);
+  font-size: .68rem;
+  font-weight: 800;
+  vertical-align: middle;
 }
 
 .main {
@@ -113,6 +172,9 @@
 }
 
 .footerBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: .88rem;
   font-weight: 800;
 }
@@ -680,6 +742,12 @@
   .gameCaption, .collectionCaption { padding: 8px; }
   .collectionCaption { grid-template-columns: minmax(0, 1fr); }
   .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (width <= 395px) {
+  .headerInner { flex-wrap: wrap; padding-block: 6px; gap: 3px 8px; }
+  .navigation { flex: 1; justify-content: flex-end; }
+  .preferences { gap: 0; }
 }
 
 @media (width <= 350px) {
