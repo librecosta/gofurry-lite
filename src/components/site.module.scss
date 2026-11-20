@@ -41,24 +41,27 @@
 
 .wordmark {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   flex: none;
-  gap: 9px;
-  font-size: clamp(1.05rem, 2.4vw, 1.38rem);
-  font-weight: 850;
-  letter-spacing: -.03em;
+  gap: 2px;
   white-space: nowrap;
 
-  img {
-    width: clamp(84px, 15vw, 138px);
-    height: auto;
-  }
-
   small {
+    margin-block-start: .28em;
     color: var(--brand);
-    font-size: .81em;
-    font-weight: 780;
+    font-size: clamp(.61rem, 1.15vw, .76rem);
+    font-weight: 800;
+    line-height: 1;
   }
+}
+
+.wordmarkArtwork {
+  width: clamp(84px, 15vw, 138px);
+  aspect-ratio: 4;
+
+  /* The transparent gap in the artwork falls between its symbol and wordmark. */
+  background: linear-gradient(to right, #8b94a1 36.5%, var(--text) 36.5%);
+  mask: url("/media/brand/gofurry-horizontal.svg") center / contain no-repeat;
 }
 
 .navigation {
@@ -751,7 +754,6 @@
 }
 
 @media (width <= 350px) {
-  .wordmark { gap: 4px; }
   .navigation { gap: 5px; }
   .siteLead { gap: 8px; }
 }

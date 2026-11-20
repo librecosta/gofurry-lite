@@ -15,7 +15,10 @@ export function Shell({ children, locale, path }: { children: ReactNode; locale:
     <a className="skip-link" href="#content">{zh ? '跳到正文' : 'Skip to content'}</a>
     <header className={styles.header}>
       <div className={styles.headerInner}>
-        <a href={href(locale)} className={styles.wordmark}><Image src="/media/brand/gofurry-horizontal.svg" alt="GoFurry" width={768} height={192} priority /><small>Lite</small></a>
+        <a href={href(locale)} className={styles.wordmark} aria-label="GoFurry Lite">
+          <span className={styles.wordmarkArtwork} aria-hidden="true" />
+          <small>Lite</small>
+        </a>
         <nav aria-label={zh ? '主导航' : 'Primary navigation'} className={styles.navigation}>
           <a href={href(locale)}>{zh ? '导航' : 'Discover'}</a>
           <a href={href(locale, '/games')}>{zh ? '游戏' : 'Games'}</a>
