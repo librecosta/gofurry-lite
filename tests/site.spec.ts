@@ -213,6 +213,71 @@ test('all homepage category members render with mode-specific counts and separat
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(y)
 })
 
+test('category dividers expand from the center and category accents stay distinct in both themes', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 840 })
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  await page.goto('/')
+  const card = page.locator('[data-category="community"]')
+  const heading = card.getByRole('heading')
+  const divider = () => heading.evaluate((node) => {
+    const track = getComputedStyle(node, '::before')
+    const accent = getComputedStyle(node, '::after')
+    return { track: track.inlineSize, accent: accent.inlineSize, thickness: accent.height, duration: accent.transitionDuration }
+  })
+  const rest = await divider()
+  expect(rest).toMatchObject({ accent: '55px', thickness: '3px', duration: '0.42s' })
+  expect(parseFloat(rest.track)).toBeGreaterThan(55)
+  await heading.hover()
+  await expect.poll(async () => (await divider()).accent).toBe(rest.track)
+  await page.mouse.move(0, 0)
+  await expect.poll(async () => (await divider()).accent).toBe('55px')
+  await card.locator('[data-category-scroll]').focus()
+  await expect.poll(async () => (await divider()).accent).toBe(rest.track)
+
+  const buttons = page.locator('[data-category] > a')
+  const fills = () => buttons.evaluateAll((links) => links.map((link) => getComputedStyle(link).backgroundColor))
+  const light = await fills()
+  expect(new Set(light).size).toBe(8)
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  await expect.poll(fills).not.toEqual(light)
+  expect(new Set(await fills()).size).toBe(8)
+  expect((await divider()).duration).toBe('0s')
+})
+
+test('homepage shortcut previews retain their artwork, stay above the buttons and support keyboard focus', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 840 })
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  await page.goto('/')
+  const nav = page.getByRole('navigation', { name: 'Projects and contact' })
+  const previews = nav.locator('[data-shortcut-preview]')
+  await expect(previews).toHaveCount(0)
+  for (const [name, image] of [
+    ['GoFurry', 'gofurry-og.png'], ['Tool4Furry', 'tool4furry-og.png'],
+    [/Email LibreCosta/, 'librecosta-email.png'], ['GitHub', 'librecosta-default.png'],
+  ] as const) {
+    const shortcut = nav.getByRole('link', { name })
+    await shortcut.hover({ position: { x: 32, y: 12 } })
+    const preview = previews.locator('img[src$="/' + image + '"]')
+    await expect(preview).toBeVisible()
+    await expect.poll(() => preview.evaluate((node) => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+    const previewBox = (await preview.boundingBox())!
+    const buttonBox = (await shortcut.boundingBox())!
+    expect(previewBox.y + previewBox.height).toBeLessThan(buttonBox.y)
+    expect(previewBox.x + previewBox.width).toBeLessThan(1440)
+  }
+  await nav.getByRole('link', { name: 'X @LibreCostaHQ' }).hover()
+  await expect(previews.filter({ hasText: '@LibreCostaHQ' })).toBeVisible()
+  await page.mouse.move(0, 0)
+  await expect(previews).toHaveCount(0)
+  await page.getByRole('searchbox').focus()
+  await page.keyboard.press('Tab')
+  await expect(nav.getByRole('link', { name: 'GoFurry' })).toBeFocused()
+  await expect(previews.locator('img[src$="/gofurry-og.png"]')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(previews).toHaveCount(0)
+})
+
 test('static pages readable without JavaScript', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false })
   try {
@@ -238,7 +303,7 @@ for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 2, 2], [37
       if (path === '/' || path === '/zh') {
         const grid = page.locator('[data-category-grid]')
         await expect(grid.locator('[data-category]')).toHaveCount(8)
-        await expect(grid.locator('[data-category]').first()).toHaveCSS('border-top-width', '2px')
+        await expect(grid.locator('[data-category]').first()).toHaveCSS('border-top-width', '3px')
         expect(await grid.evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(cardColumns)
         const list = grid.locator('[data-category-scroll]').first()
         expect(await list.locator('ul').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(entryColumns)

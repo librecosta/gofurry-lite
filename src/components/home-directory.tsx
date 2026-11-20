@@ -1,8 +1,8 @@
 import { categories, type CategoryCode } from '../lib/categories'
 import { href, inCategory, intro, localized, ordered, type DirectorySite, type Locale } from '../lib/presentation'
 import type { ReactNode } from 'react'
-import { ChannelLink, ContactLinks } from './channel-links'
 import { t } from './elements'
+import { HomeShortcuts } from './home-shortcuts'
 import { Icon } from './icons'
 import { Media } from './media'
 import styles from './home.module.scss'
@@ -13,15 +13,7 @@ export function HomeLead({ locale, search }: { locale: Locale; search: ReactNode
     <p>{intro[locale].description}</p>
     <div className={styles.leadActions}>
       {search}
-      <nav className={styles.shortcuts} aria-label={t(locale, '项目与联系方式', 'Projects and contact')}>
-        <ChannelLink url="https://gofurry.com" label="GoFurry">
-          <span className={styles.projectMark + ' ' + styles.gofurryMark} aria-hidden="true" />
-        </ChannelLink>
-        <ChannelLink url="https://tool4furry.com" label="Tool4Furry">
-          <span className={styles.projectMark + ' ' + styles.tool4furryMark} aria-hidden="true" />
-        </ChannelLink>
-        <ContactLinks locale={locale} />
-      </nav>
+      <HomeShortcuts locale={locale} />
     </div>
   </div>
 }
