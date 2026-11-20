@@ -6,6 +6,7 @@
   --surface: rgb(229 231 235 / 8%);
   --surface-strong: rgb(229 231 235 / 14%);
   --surface-hover: rgb(229 231 235 / 16%);
+  --nav-surface: rgb(40 42 45 / 78%);
   --border: rgb(226 232 240 / 18%);
   --border-strong: rgb(226 232 240 / 28%);
   --text: rgb(248 250 252 / 94%);
@@ -29,6 +30,7 @@
   --surface: rgb(255 250 242 / 72%);
   --surface-strong: rgb(255 250 242 / 88%);
   --surface-hover: rgb(255 239 213 / 72%);
+  --nav-surface: rgb(255 250 242 / 78%);
   --border: rgb(126 92 58 / 16%);
   --border-strong: rgb(126 92 58 / 24%);
   --text: rgb(28 25 23 / 94%);
@@ -48,6 +50,7 @@
   --gutter: clamp(14px, 4vw, 46px);
   --content: 1360px;
   --motion: 160ms;
+  --nav-motion: 420ms;
 }
 
 @media (prefers-color-scheme: dark) {

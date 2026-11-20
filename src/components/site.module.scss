@@ -24,110 +24,6 @@
   }
 }
 
-.header {
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-strong);
-}
-
-.headerInner {
-  @include frame;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 64px;
-  gap: 10px;
-}
-
-.wordmark {
-  display: inline-flex;
-  align-items: flex-start;
-  flex: none;
-  gap: 2px;
-  white-space: nowrap;
-
-  small {
-    margin-block-start: .28em;
-    color: var(--brand);
-    font-size: clamp(.61rem, 1.15vw, .76rem);
-    font-weight: 800;
-    line-height: 1;
-  }
-}
-
-.wordmarkArtwork {
-  width: clamp(84px, 15vw, 138px);
-  aspect-ratio: 4;
-
-  /* The transparent gap in the artwork falls between its symbol and wordmark. */
-  background: linear-gradient(to right, #8b94a1 36.5%, var(--text) 36.5%);
-  mask: url("/media/brand/gofurry-horizontal.svg") center / contain no-repeat;
-}
-
-.navigation {
-  display: flex;
-  align-items: center;
-  gap: clamp(8px, 2.3vw, 26px);
-  color: var(--muted);
-  font-size: .9rem;
-  font-weight: 720;
-
-  > a:hover { color: var(--brand); }
-}
-
-.preferences {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.modeSwitch {
-  position: relative;
-  display: inline-grid;
-  flex: none;
-  grid-template-columns: repeat(2, 1fr);
-  min-inline-size: 0;
-  margin: 0;
-  padding: 2px;
-  color: var(--muted);
-  border: 1px solid var(--border-strong);
-  border-radius: 99px;
-  background: var(--surface);
-  font-size: .69rem;
-  font-weight: 800;
-
-  &::before {
-    position: absolute;
-    inset: 2px auto 2px 2px;
-    width: calc(50% - 2px);
-    border-radius: inherit;
-    background: var(--action);
-    transition: transform var(--motion) ease;
-    content: "";
-  }
-
-  &[data-mode="nsfw"]::before { transform: translateX(100%); }
-
-  label {
-    position: relative;
-    cursor: pointer;
-  }
-
-  span {
-    display: grid;
-    padding: 4px 6px;
-    border-radius: 99px;
-    place-items: center;
-  }
-
-  input:checked + span { color: var(--action-text); }
-
-  input:focus-visible + span {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
-  }
-}
-
 .ratingBadge {
   display: inline-block;
   margin-inline-start: .45em;
@@ -730,12 +626,9 @@
 @media (width <= 740px) {
   .siteGrid, .collectionGrid, .gameGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .detailSplit, .gameLead { grid-template-columns: minmax(0, 1fr); }
-  .desktopNav { display: none; }
 }
 
 @media (width <= 450px) {
-  .headerInner { min-height: 56px; }
-  .navigation { font-size: .83rem; }
   .siteGrid { grid-template-columns: minmax(0, 1fr); }
   .categoryCard { padding-inline: 8px; }
   .categoryCard h3 a { gap: 5px; }
@@ -747,13 +640,6 @@
   .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (width <= 395px) {
-  .headerInner { flex-wrap: wrap; padding-block: 6px; gap: 3px 8px; }
-  .navigation { flex: 1; justify-content: flex-end; }
-  .preferences { gap: 0; }
-}
-
 @media (width <= 350px) {
-  .navigation { gap: 5px; }
   .siteLead { gap: 8px; }
 }

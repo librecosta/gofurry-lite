@@ -16,6 +16,7 @@ html {
 
 body {
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -23,7 +24,7 @@ body {
 }
 
 body::before {
-  position: absolute;
+  position: fixed;
   z-index: -1;
   inset: 0 0 auto;
   height: min(540px, 70vh);
@@ -71,7 +72,7 @@ h1, h2, h3 {
 
 .skip-link:focus {
   position: fixed;
-  z-index: 5;
+  z-index: 40;
   top: 10px;
   left: 12px;
   padding: 8px 14px;
@@ -80,21 +81,18 @@ h1, h2, h3 {
   border-radius: var(--r-sm);
 }
 
-.language-button, .icon-button {
-  display: inline-grid;
-  place-items: center;
-  min-width: 32px;
-  min-height: 34px;
-  padding: 0 5px;
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  font-size: .82rem;
-  font-weight: 700;
+@media (width > 1050px) {
+  html { scroll-padding-block-start: 76px; }
 }
-.language-button:hover, .icon-button:hover { background: var(--surface-hover); }
+
+@media (width <= 1050px) {
+  html { scroll-padding-block-end: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-block-end: calc(76px + env(safe-area-inset-bottom, 0px)); }
+}
 
 @media (prefers-reduced-motion: reduce) {
+  :root { --nav-motion: 0ms; }
+
   *, *::before, *::after {
     scroll-behavior: auto !important;
     transition-duration: 0s !important;

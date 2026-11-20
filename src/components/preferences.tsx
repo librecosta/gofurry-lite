@@ -1,9 +1,8 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
-import { Icon } from './icons'
 import type { Locale, Rating } from '../lib/presentation'
-import styles from './site.module.scss'
+import styles from './navigation.module.scss'
 
 const subscribers = new Set<() => void>()
 
@@ -14,23 +13,29 @@ function subscribe(callback: () => void) {
 
 function currentTheme() {
   const theme = document.documentElement.dataset.theme
-  return theme === 'light' || theme === 'dark' ? theme : 'system'
+  if (theme === 'light' || theme === 'dark') return theme
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-function toggleTheme() {
-  const active = currentTheme()
-  const hasDark = active === 'dark' || (active === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
-  const next = hasDark ? 'light' : 'dark'
+export function toggleTheme() {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark'
   document.documentElement.dataset.theme = next
   try { localStorage.setItem('gofurry-theme', next) } catch {}
   for (const update of subscribers) update()
 }
 
+function subscribeTheme(callback: () => void) {
+  const unsubscribe = subscribe(callback)
+  const scheme = matchMedia('(prefers-color-scheme: dark)')
+  scheme.addEventListener('change', callback)
+  return () => {
+    unsubscribe()
+    scheme.removeEventListener('change', callback)
+  }
+}
 
-export function ThemeButton({ locale }: { locale: Locale }) {
-  const theme = useSyncExternalStore(subscribe, currentTheme, () => 'system')
-  const description = locale === 'zh' ? '切换亮暗主题' : 'Toggle light or dark theme'
-  return <button className="icon-button" type="button" onClick={toggleTheme} aria-label={description} title={description}><Icon name={theme === 'dark' ? 'sun' : 'moon'} /></button>
+export function useTheme() {
+  return useSyncExternalStore(subscribeTheme, currentTheme, () => 'light')
 }
 
 const ratingKey = 'gofurry-content-mode'
@@ -51,6 +56,10 @@ function setMode(mode: Rating) {
 
 export function useContentMode() {
   return useSyncExternalStore(subscribe, currentMode, () => 'sfw' as const)
+}
+
+export function toggleContentMode() {
+  setMode(currentMode() === 'sfw' ? 'nsfw' : 'sfw')
 }
 
 export function ContentModeSwitch({ locale }: { locale: Locale }) {

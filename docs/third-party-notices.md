@@ -8,3 +8,7 @@
 Favicon、横向标识和符号直接复用新 GoFurry 品牌资源。Lite 分享图保留原分享图的构图，在 GoFurry 字标右上方添加 Manrope 字形轮廓。新站原始字标使用 Nunito ExtraBold 的字形轮廓。 [新站品牌来源](https://github.com/librecosta/gofurry/tree/4206faf8d4e7067a51028c12be723869501a4423/apps/web/public/brand) · [Nunito SIL OFL](../public/media/brand/nunito-OFL.txt)
 
 页面使用本地自托管的 Manrope Variable 和 Noto Sans SC Variable，均使用随 Fontsource 分发的 SIL Open Font License。 [Manrope SIL OFL](../public/media/brand/manrope-OFL.txt) · [Noto Sans SC SIL OFL](../public/media/brand/noto-sans-sc-OFL.txt)
+
+底部导航的宽度展开和滑入标签参考随任务提供的 Expanding Icon Menu。原作者为 Uiverse 的 Admin12121，示例工程由 TuneShape contributors 提供，均适用 MIT 许可。 [原作者](https://uiverse.io/Admin12121/soft-falcon-79) · [MIT 许可](expanding-menu-license.txt)
+
+界面图标使用 Phosphor Icons for React。 [项目](https://github.com/phosphor-icons/react) · [MIT 许可](phosphor-icons-license.txt)
