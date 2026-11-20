@@ -37,11 +37,14 @@
 }
 
 .main {
+  flex: 1;
+  min-width: 0;
+}
+
+.pageFrame {
   @include frame;
 
-  flex: 1;
   padding-block: clamp(26px, 5vw, 52px) 52px;
-  min-width: 0;
 }
 
 .pageTitle {

@@ -24,28 +24,26 @@
 
 .wordmark {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: center;
   flex: none;
-  gap: 3px;
-  white-space: nowrap;
-
-  small {
-    /* Align with the artwork's text baseline above the y descender. */
-    margin-block-end: 8px;
-    color: var(--brand);
-    font-size: .95rem;
-    font-weight: 800;
-    line-height: 1;
-  }
 }
 
+/* The two artworks share the same vertical SVG coordinates and text baseline. */
+.wordmarkArtwork,
+.wordmarkLite { height: 34.5px; }
+
 .wordmarkArtwork {
-  width: 138px;
   aspect-ratio: 4;
 
   /* The transparent gap in the artwork falls between its symbol and wordmark. */
   background: linear-gradient(to right, #8b94a1 36.5%, var(--text) 36.5%);
   mask: url("/media/brand/gofurry-horizontal.svg") center / contain no-repeat;
+}
+
+.wordmarkLite {
+  aspect-ratio: 210 / 192;
+  background: var(--brand);
+  mask: url("/media/brand/gofurry-lite-suffix.svg") center / contain no-repeat;
 }
 
 .desktopNav {

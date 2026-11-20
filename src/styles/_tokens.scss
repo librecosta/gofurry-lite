@@ -6,6 +6,11 @@
   --surface: rgb(229 231 235 / 8%);
   --surface-strong: rgb(229 231 235 / 14%);
   --surface-hover: rgb(229 231 235 / 16%);
+  --guide-surface: #292f34;
+  --footer-surface: #342a25;
+  --copyright-surface: #271f1b;
+  --footer-ink: #e7d9ce;
+  --footer-hover-ink: #ffbb91;
   --nav-surface: rgb(40 42 45 / 78%);
   --nav-hover-ink: #ffd5b8;
   --nav-button-hover: rgb(253 186 140 / 19%);
@@ -35,6 +40,11 @@
   --surface: rgb(255 250 242 / 72%);
   --surface-strong: rgb(255 250 242 / 88%);
   --surface-hover: rgb(255 239 213 / 72%);
+  --guide-surface: #fbf4e9;
+  --footer-surface: #e4c7b0;
+  --copyright-surface: #d9b79d;
+  --footer-ink: #4d3225;
+  --footer-hover-ink: #7a260f;
   --nav-surface: rgb(255 250 242 / 78%);
   --nav-hover-ink: #a73c10;
   --nav-button-hover: rgb(160 74 24 / 16%);
@@ -61,6 +71,7 @@
   --content: 1360px;
   --motion: 160ms;
   --dock-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+  --dock-clearance: calc(76px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (prefers-color-scheme: dark) {

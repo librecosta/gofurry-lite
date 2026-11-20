@@ -182,7 +182,7 @@ export function SiteNavigation({ locale, path }: { locale: Locale; path: string 
       <div className={styles.headerInner}>
         <a href={href(locale)} className={styles.wordmark} aria-label="GoFurry Lite">
           <span className={styles.wordmarkArtwork} aria-hidden="true" />
-          <small>Lite</small>
+          <span className={styles.wordmarkLite} aria-hidden="true" />
         </a>
         <nav aria-label={zh ? '主导航' : 'Primary navigation'} className={styles.desktopNav}>
           <ContentModeSwitch locale={locale} disabled={!ready} />

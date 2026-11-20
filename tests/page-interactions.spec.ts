@@ -134,9 +134,10 @@ test('scroll gauge follows document scrolling, seeks by track, drags, and handle
   await expect(gauge).toBeHidden()
 })
 
-test('scroll gauge clears the mobile dock and footer exposes two centered sections', async ({ page }) => {
+test('mobile bottom bands span the viewport and the copyright follows the current year', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 })
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  await page.clock.setFixedTime(new Date('2026-11-20T00:00:00Z'))
   await page.route(/steamstatic\.com/, (route) => route.abort())
   await page.goto('/en')
   await page.evaluate(() => scrollTo(0, document.body.scrollHeight))
@@ -148,12 +149,39 @@ test('scroll gauge clears the mobile dock and footer exposes two centered sectio
   const scrolling = await gauge.boundingBox()
   expect(scrolling!.y + scrolling!.height).toBeLessThan(bottom!.y)
   const footer = page.getByRole('contentinfo')
-  await expect(footer.locator(':scope > div')).toHaveCount(2)
+  const footerBands = footer.locator(':scope > div')
+  await expect(footerBands).toHaveCount(2)
+  const guide = page.getByRole('region', { name: 'A guide to GoFurry Lite' })
+  const colors = []
+  for (const band of [guide, footerBands.first(), footerBands.last()]) {
+    const bounds = (await band.boundingBox())!
+    expect(bounds.x).toBe(0)
+    expect(bounds.width).toBe(320)
+    await expect(band).toHaveCSS('border-top-width', '0px')
+    await expect(band).toHaveCSS('border-radius', '0px')
+    colors.push(await band.evaluate((element) => getComputedStyle(element).backgroundColor))
+  }
+  expect(new Set(colors).size).toBe(3)
+  const copyrightBand = (await footerBands.last().boundingBox())!
+  expect(copyrightBand.y + copyrightBand.height).toBeCloseTo(700, 0)
   const channels = footer.getByRole('navigation', { name: 'Contact and official channels' })
-  await expect(channels.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/librecosta/gofurry-lite')
+  const github = channels.getByRole('link', { name: 'GitHub' })
+  await expect(github).toHaveAttribute('href', 'https://github.com/librecosta/gofurry-lite')
+  const iconBounds = await github.boundingBox()
+  const initialInk = await github.evaluate((element) => getComputedStyle(element).color)
+  await github.hover()
+  await expect.poll(() => github.evaluate((element) => getComputedStyle(element).color)).not.toBe(initialInk)
+  await expect(github).toHaveCSS('border-top-width', '0px')
+  await expect(github).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  expect(await github.boundingBox()).toEqual(iconBounds)
   await expect(channels.getByRole('link', { name: /Email LibreCosta/ })).toHaveAttribute('href', 'mailto:contact@librecosta.com')
   await expect(footer.getByRole('navigation', { name: 'Site information' })).toHaveCSS('justify-content', 'center')
-  await expect(footer.getByText('© 2026 LibreCosta · GoFurry Lite')).toHaveCSS('text-align', 'center')
+  const copyright = footer.getByRole('link', { name: '© 2026 GoFurry · The Best Furry Sites!' })
+  await expect(copyright).toHaveAttribute('href', 'https://gofurry.com')
+  await expect(footerBands.last()).toHaveCSS('text-align', 'center')
+  await page.clock.setFixedTime(new Date('2029-01-01T00:00:00Z'))
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await expect(footer.getByRole('link', { name: '© 2026-2029 GoFurry · The Best Furry Sites!' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
@@ -169,6 +197,7 @@ test('Chinese and English home guide headings and prose are available with JavaS
       await expect(guide.getByRole('heading', { level: 3 })).toHaveCount(4)
       await expect(guide.getByRole('listitem')).toHaveCount(8)
       expect((await guide.innerText()).length).toBeGreaterThan(800)
+      expect(await guide.evaluate((element) => element.getBoundingClientRect().width)).toBe(await page.evaluate(() => innerWidth))
     }
     await page.goto('/en/games/collections')
     await expect(page.getByRole('region', { name: 'A guide to GoFurry Lite' })).toHaveCount(0)

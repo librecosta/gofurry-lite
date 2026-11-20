@@ -5,7 +5,7 @@
 
 旧 GoFurry 自有代码与文档适用 BSD-3-Clause，版权为 Copyright (c) 2026 福狼。旧站原始网站内容适用 CC BY-NC-SA 4.0。站点 Logo、Steam 图像、商标和其他第三方作品归各权利方。 [旧站 BSD-3-Clause 文本](legacy-gofurry-license.txt) · [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-Favicon、横向标识和符号直接复用新 GoFurry 品牌资源。Lite 分享图保留原分享图的构图，在 GoFurry 字标右上方添加 Manrope 字形轮廓。新站原始字标使用 Nunito ExtraBold 的字形轮廓。 [新站品牌来源](https://github.com/librecosta/gofurry/tree/4206faf8d4e7067a51028c12be723869501a4423/apps/web/public/brand) · [Nunito SIL OFL](../public/media/brand/nunito-OFL.txt)
+Favicon、横向标识和符号直接复用新 GoFurry 品牌资源。Lite 分享图保留原分享图的构图，在 GoFurry 字标右上方添加 Manrope 字形轮廓。页头 Lite 后缀沿用原字标的 Nunito ExtraBold 800 v3.602 轮廓、比例和基线。 [新站品牌来源](https://github.com/librecosta/gofurry/tree/4206faf8d4e7067a51028c12be723869501a4423/apps/web/public/brand) · [Nunito 字体源](https://github.com/google/fonts/tree/cc39c4c2c304bc368c9b7c311ea2bcc6013299fe/ofl/nunito) · [Nunito SIL OFL](../public/media/brand/nunito-OFL.txt)
 
 页面使用本地自托管的 Manrope Variable 和 Noto Sans SC Variable，均使用随 Fontsource 分发的 SIL Open Font License。 [Manrope SIL OFL](../public/media/brand/manrope-OFL.txt) · [Noto Sans SC SIL OFL](../public/media/brand/noto-sans-sc-OFL.txt)
 

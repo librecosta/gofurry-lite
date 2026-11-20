@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Locale } from '../lib/presentation'
 import { SiteFooter } from './footer'
+import { HomeGuide } from './home-guide'
 import { SiteNavigation } from './navigation'
 import { ScrollGauge } from './scroll-gauge'
 import styles from './site.module.scss'
@@ -13,8 +14,11 @@ export function Shell({ children, locale, path }: { children: ReactNode; locale:
     <script dangerouslySetInnerHTML={{ __html: initTheme }} />
     <a className="skip-link" href="#content">{zh ? '跳到正文' : 'Skip to content'}</a>
     <SiteNavigation locale={locale} path={path} />
-    <main id="content" tabIndex={-1} className={styles.main}>{children}</main>
-    <SiteFooter locale={locale} />
+    <main id="content" tabIndex={-1} className={styles.main}>
+      <div className={styles.pageFrame}>{children}</div>
+      {path === '/' && <HomeGuide locale={locale} />}
+    </main>
+    <SiteFooter locale={locale} initialYear={new Date().getUTCFullYear()} />
     <ScrollGauge locale={locale} />
   </>
 }

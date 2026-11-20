@@ -99,8 +99,7 @@ html[data-theme-reveal]::view-transition-new(root) { clip-path: var(--theme-reve
 }
 
 @media (width < 768px) {
-  html { scroll-padding-block-end: calc(76px + env(safe-area-inset-bottom, 0px)); }
-  body { padding-block-end: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  html { scroll-padding-block-end: var(--dock-clearance); }
 }
 
 @media (prefers-reduced-motion: reduce) {
