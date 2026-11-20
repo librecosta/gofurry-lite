@@ -1,0 +1,61 @@
+/* Semantic roles translated from the archived GoFurry tokens.less. */
+@mixin dark {
+  color-scheme: dark;
+
+  --canvas: #1d1f22;
+  --surface: rgb(229 231 235 / 8%);
+  --surface-strong: rgb(229 231 235 / 14%);
+  --surface-hover: rgb(229 231 235 / 16%);
+  --border: rgb(226 232 240 / 18%);
+  --border-strong: rgb(226 232 240 / 28%);
+  --text: rgb(248 250 252 / 94%);
+  --muted: rgb(203 213 225 / 76%);
+  --brand: #fdba8c;
+  --brand-soft: rgb(249 115 22 / 15%);
+  --action: #fdba8c;
+  --action-hover: #fed7aa;
+  --action-text: #29180e;
+  --input: #26282c;
+  --dot: rgb(193 197 203 / 16%);
+  --shadow: 0 18px 44px rgb(0 0 0 / 28%);
+}
+
+:root {
+  color-scheme: light;
+
+  --font: "Manrope Variable", "Noto Sans SC Variable", system-ui, "Microsoft YaHei", sans-serif;
+  --font-mono: "Cascadia Mono", consolas, ui-monospace, monospace;
+  --canvas: #f2e3d0;
+  --surface: rgb(255 250 242 / 72%);
+  --surface-strong: rgb(255 250 242 / 88%);
+  --surface-hover: rgb(255 239 213 / 72%);
+  --border: rgb(126 92 58 / 16%);
+  --border-strong: rgb(126 92 58 / 24%);
+  --text: rgb(28 25 23 / 94%);
+  --muted: #63564d;
+  --brand: #873717;
+  --brand-soft: rgb(249 115 22 / 14%);
+  --action: #873717;
+  --action-hover: #63270f;
+  --action-text: #fffaf2;
+  --input: rgb(255 250 242 / 91%);
+  --dot: rgb(128 108 88 / 20%);
+  --shadow: 0 18px 44px rgb(126 92 58 / 12%);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --focus: #cb5c25;
+  --gutter: clamp(14px, 4vw, 46px);
+  --content: 1360px;
+  --motion: 160ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  @include dark;
+}
