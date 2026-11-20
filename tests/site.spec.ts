@@ -106,7 +106,7 @@ test('search, game category and species filters, and locale continuity', async (
   await page.getByLabel('Game category').selectOption(String(category.id))
   await page.getByLabel('Species').selectOption(String(species.id))
   await expect(page.getByRole('status')).toHaveText('1 result')
-  await expect(page.getByRole('link', { name: /Threefold Recital/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /^Threefold Recital/ })).toBeVisible()
   await page.getByRole('searchbox').fill('nonexistent-catalog-entry')
   await expect(page.getByRole('status')).toHaveText('0 results')
 })
@@ -138,8 +138,18 @@ test('homepage floating search handles the outline notch, IME and clear controls
   await expect(page.locator('[data-category-grid]')).toBeVisible()
   await expect(page.locator('[data-results="sites"]')).toHaveCount(0)
   await session.send('Input.insertText', { text: keyword })
-  await expect(page.locator('[data-results="sites"] a[href="/zh/site/105"]')).toBeVisible()
-  await page.getByRole('button', { name: '清除搜索' }).click()
+  const result = page.locator('[data-results="sites"] a[href="/zh/site/105"]')
+  await expect(result).toBeVisible()
+  await expect(result).toHaveCSS('border-top-width', '0px')
+  await expect(result.locator(':scope > span').first()).toHaveCSS('border-top-width', '0px')
+  const clear = page.getByRole('button', { name: '清除搜索' })
+  const transparent = 'rgba(0, 0, 0, 0)'
+  const clearColor = await clear.evaluate((button) => getComputedStyle(button).color)
+  await expect(clear).toHaveCSS('background-color', transparent)
+  await clear.hover()
+  await expect(clear).toHaveCSS('background-color', transparent)
+  await expect(clear).toHaveCSS('color', clearColor)
+  await clear.click()
   await expect(input).toHaveValue('')
   await expect(input).toBeFocused()
   await expect(page.locator('[data-category-grid]')).toBeVisible()
@@ -194,11 +204,21 @@ test('all homepage category members render with mode-specific counts and separat
   }
 
   const row = page.locator('[data-site-id="105"]').first()
-  await expect(row.locator('a').first()).toHaveAttribute('href', '/site/105')
+  const detail = row.getByRole('link').first()
+  await expect(detail).toHaveAttribute('href', '/site/105')
   const external = row.getByRole('link', { name: /^Visit / })
   await expect(external).toHaveAttribute('href', catalog.sites.find(({ id }) => id === 105)!.url!)
   await expect(external).toHaveAttribute('target', '_blank')
   await expect(external).toHaveAttribute('rel', 'noopener noreferrer')
+  const noFill = 'rgba(0, 0, 0, 0)'
+  await detail.hover()
+  await expect(detail).not.toHaveCSS('background-color', noFill)
+  await expect(external).toHaveCSS('background-color', noFill)
+  await expect(row).toHaveCSS('background-color', noFill)
+  await external.hover()
+  await expect(external).not.toHaveCSS('background-color', noFill)
+  await expect(detail).toHaveCSS('background-color', noFill)
+  await expect(row).toHaveCSS('background-color', noFill)
   await expect(page.locator('[data-site-id="135"] a[target="_blank"]')).toHaveCount(0)
 
   const scroll = page.locator('[data-category="community"] [data-category-scroll]')
@@ -223,19 +243,19 @@ test('homepage tall cards follow the desktop sketch and share one height in the 
       return [card.getAttribute('data-category')!, { x, y, width, height }] as const
     }),
   ))
-  const { community, gallery, marketplace, literature, resources, events, knowledge, gaming } = await boxes()
-  const gap = gallery.x - (community.x + community.width)
+  const { gallery, gaming, marketplace, literature, knowledge, events, resources, community } = await boxes()
+  const gap = gaming.x - (gallery.x + gallery.width)
   expect(gap).toBeGreaterThan(0)
-  expect(gallery.y).toBe(community.y)
-  expect(community.width).toBeCloseTo(marketplace.width + literature.width + gap, 1)
-  expect(gallery.width).toBeCloseTo(resources.width + events.width + gap, 1)
-  expect([literature.y, resources.y, events.y]).toEqual([marketplace.y, marketplace.y, marketplace.y])
-  expect([knowledge.x, gaming.x]).toEqual([literature.x, resources.x])
-  expect(knowledge.y).toBeCloseTo(literature.y + literature.height + gap, 1)
-  expect(gaming.y).toBeCloseTo(resources.y + resources.height + gap, 1)
-  expect(marketplace.y + marketplace.height).toBeCloseTo(knowledge.y + knowledge.height, 1)
-  expect(events.y + events.height).toBeCloseTo(gaming.y + gaming.height, 1)
-  expect(community.height).toBeGreaterThan(304)
+  expect(gaming.y).toBe(gallery.y)
+  expect(gallery.width).toBeCloseTo(marketplace.width + literature.width + gap, 1)
+  expect(gaming.width).toBeCloseTo(knowledge.width + events.width + gap, 1)
+  expect([literature.y, knowledge.y, events.y]).toEqual([marketplace.y, marketplace.y, marketplace.y])
+  expect([resources.x, community.x]).toEqual([literature.x, knowledge.x])
+  expect(resources.y).toBeCloseTo(literature.y + literature.height + gap, 1)
+  expect(community.y).toBeCloseTo(knowledge.y + knowledge.height + gap, 1)
+  expect(marketplace.y + marketplace.height).toBeCloseTo(resources.y + resources.height, 1)
+  expect(events.y + events.height).toBeCloseTo(community.y + community.height, 1)
+  expect(gallery.height).toBeGreaterThan(304)
   expect(literature.height).toBeGreaterThan(304)
 
   for (const width of [960, 375, 320]) {
@@ -279,6 +299,45 @@ test('homepage records visits from detail links and external links without reord
   await popup.close()
   await page.reload()
   await expect(row.getByTitle('已访问', { exact: true })).toBeVisible()
+})
+
+test('game cards cover the full tile and open Steam through an independent link', async ({ page, context }) => {
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  const game = catalog.games.find(({ id }) => id === catalog.featuredGames[0])!
+  const storeUrl = 'https://store.steampowered.com/app/' + game.appId + '/'
+  const title = game.title.en
+  const tags = game.tags.flatMap(({ id }) =>
+    catalog.tags.find((tag) => tag.id === id && tag.category === 'classification')?.title.en ?? []).slice(0, 3)
+  const detailUrl = '/games/' + game.id
+  const detail = page.locator('a[href="' + detailUrl + '"]')
+  const tile = detail.locator('..')
+  const store = tile.getByRole('link', { name: /View on Steam/ })
+
+  for (const [path, width] of [['/', 1440], ['/games', 320]] as const) {
+    await page.setViewportSize({ width, height: 920 })
+    await page.goto(path)
+    await expect(detail.getByText(title, { exact: true })).toBeVisible()
+    await expect(detail.locator('span[title]')).toHaveText(tags)
+    await expect(tile).toHaveCSS('border-top-width', '0px')
+    const cover = detail.locator(':scope > span').first()
+    expect(await cover.boundingBox()).toEqual(await tile.boundingBox())
+    expect(await detail.boundingBox()).toEqual(await tile.boundingBox())
+    await expect(store).toHaveAttribute('href', storeUrl)
+    await expect(store).toHaveAttribute('target', '_blank')
+    const lastTag = (await detail.locator('span[title]').last().boundingBox())!
+    const steam = (await store.boundingBox())!
+    expect(lastTag.x + lastTag.width).toBeLessThan(steam.x)
+    expect(await detail.locator('span[title]').evaluateAll((chips) => chips.every((chip) =>
+      chip.scrollWidth <= chip.clientWidth + 1))).toBe(true)
+  }
+
+  await context.route(storeUrl, (route) => route.fulfill({ body: 'Steam store' }))
+  const [popup] = await Promise.all([page.waitForEvent('popup'), store.click()])
+  await expect(popup).toHaveURL(storeUrl)
+  await popup.close()
+  await expect(page).toHaveURL('/games')
+  await detail.press('Enter')
+  await expect(page).toHaveURL(detailUrl)
 })
 
 test('category dividers expand from the center and category accents stay distinct in both themes', async ({ page }) => {
@@ -377,12 +436,36 @@ for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 1, 3], [37
         expect(await list.locator('ol').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(entryColumns)
         expect(await list.evaluate((node) => node.scrollWidth - node.clientWidth)).toBe(0)
 
+        const localePrefix = path === '/zh' ? '/zh' : ''
+        const gameNavigation = page.getByRole('navigation', { name: /Discover games|兽游发现/ })
+        const collections = gameNavigation.getByRole('link', { name: /Collections|游戏合集/ })
+        const allGames = gameNavigation.getByRole('link', { name: /All games|全部游戏/ })
+        await expect(collections).toHaveAttribute('href', localePrefix + '/games/collections')
+        await expect(allGames).toHaveAttribute('href', localePrefix + '/games')
+        const left = (await collections.boundingBox())!
+        const right = (await allGames.boundingBox())!
+        expect(left.y).toBe(right.y)
+        expect(left.x + left.width).toBeLessThan(right.x)
+        const categoryHeading = page.getByRole('heading', { name: /Explore categories|探索分类/ })
+        const legacyGroups = categoryHeading.locator('..').getByRole('link', { name: /Legacy groups|历史分组/ })
+        await expect(legacyGroups).toHaveAttribute('href', localePrefix + '/site-groups')
+
         const shortcuts = (await page.getByRole('navigation', { name: /Projects and contact|项目与联系方式/ }).boundingBox())!
         const search = (await page.getByRole('searchbox').boundingBox())!
         if (width < 768) expect(search.y + search.height).toBeLessThan(shortcuts.y)
         else {
           expect(search.x + search.width).toBeLessThan(shortcuts.x)
           expect(search.y + search.height / 2).toBeCloseTo(shortcuts.y + shortcuts.height / 2, 0)
+        }
+
+        if (width === 1440) {
+          for (const link of [legacyGroups, allGames]) {
+            const underline = () => link.locator('span').evaluate((label) => getComputedStyle(label, '::after').transform)
+            await expect.poll(underline).toBe('none')
+            await link.hover()
+            await expect(link).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+            await expect.poll(underline).toBe('matrix(0.62, 0, 0, 1, 0, 0)')
+          }
         }
       }
     }

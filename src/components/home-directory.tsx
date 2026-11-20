@@ -55,7 +55,7 @@ const colors: Record<CategoryCode, string> = {
 
 // Read across the desktop grid and use the same category order on smaller screens.
 const categoryOrder: readonly CategoryCode[] = [
-  'community', 'gallery', 'marketplace', 'literature', 'resources', 'events', 'knowledge', 'gaming',
+  'gallery', 'gaming', 'marketplace', 'literature', 'knowledge', 'events', 'resources', 'community',
 ]
 const homeCategories = categoryOrder.map((code) => categories.find((category) => category[0] === code)!)
 

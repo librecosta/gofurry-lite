@@ -52,6 +52,10 @@ export function steamCover(appId: number) {
   return 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/' + appId + '/header.jpg'
 }
 
+export function steamStore(appId: number) {
+  return 'https://store.steampowered.com/app/' + appId + '/'
+}
+
 export function inCategory(site: DirectorySite, code: CategoryCode) {
   return site.category.primary === code || site.category.secondary.includes(code)
 }

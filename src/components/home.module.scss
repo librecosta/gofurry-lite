@@ -183,8 +183,45 @@
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--muted);
+}
 
-  &:hover { background: var(--brand-soft); color: var(--brand); }
+.sectionActions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  margin-inline-start: auto;
+}
+
+// The Tool4Furry homepage uses a fine underline that recedes on interaction.
+.sectionAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--brand);
+  font-size: .875rem;
+  font-weight: 620;
+  white-space: nowrap;
+  transition: color 180ms ease;
+
+  span {
+    position: relative;
+
+    &::after {
+      position: absolute;
+      inset: auto 0 -3px;
+      height: 1px;
+      background: currentcolor;
+      transform-origin: left;
+      transition: transform 180ms ease;
+      content: '';
+    }
+  }
+
+  &:is(:hover, :focus-visible) {
+    color: var(--text);
+
+    span::after { transform: scaleX(.62); }
+  }
 }
 
 .categoryGrid {
@@ -338,9 +375,7 @@
   align-items: stretch;
   min-width: 0;
   min-height: 25px;
-  border-radius: var(--r-sm);
 
-  &:is(:hover, :focus-within) { background: var(--category-fill); }
   a:focus-visible { outline-offset: -2px; }
 }
 
@@ -367,6 +402,9 @@
   border-radius: var(--r-sm);
   font-size: .82rem;
   font-weight: 680;
+  transition: background-color var(--motion);
+
+  &:is(:hover, :focus-visible) { background-color: var(--category-fill); }
 
   > span:first-child {
     width: 17px;
@@ -395,10 +433,12 @@
   display: grid;
   flex: 0 0 24px;
   place-items: center;
+  margin-inline-start: 3px;
   border-radius: var(--r-sm);
   color: var(--category-ink);
+  transition: background-color var(--motion);
 
-  &:is(:hover, :focus-visible) { background: var(--category-fill); }
+  &:is(:hover, :focus-visible) { background-color: var(--category-fill); }
 }
 
 .categoryMore {
@@ -422,9 +462,9 @@
 @media (width >= 1050px) {
   .categoryGrid {
     grid-template:
-      'community community gallery gallery' 364px
-      'marketplace literature resources events' 410px
-      'marketplace knowledge gaming events' 410px / minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+      'gallery gallery gaming gaming' 364px
+      'marketplace literature knowledge events' 410px
+      'marketplace resources community events' 410px / minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .categoryCard { height: auto; }

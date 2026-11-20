@@ -18,6 +18,7 @@ import { ShieldCheckIcon } from '@phosphor-icons/react/dist/ssr/ShieldCheck'
 import { ShieldWarningIcon } from '@phosphor-icons/react/dist/ssr/ShieldWarning'
 import { ShoppingBagIcon } from '@phosphor-icons/react/dist/ssr/ShoppingBag'
 import { StackIcon } from '@phosphor-icons/react/dist/ssr/Stack'
+import { SteamLogoIcon } from '@phosphor-icons/react/dist/ssr/SteamLogo'
 import { SunIcon } from '@phosphor-icons/react/dist/ssr/Sun'
 import { TranslateIcon } from '@phosphor-icons/react/dist/ssr/Translate'
 import { UsersIcon } from '@phosphor-icons/react/dist/ssr/Users'
@@ -46,6 +47,7 @@ const glyphs = {
   discover: CompassIcon,
   mail: EnvelopeSimpleIcon,
   github: GithubLogoIcon,
+  steam: SteamLogoIcon,
   'x-logo': XLogoIcon,
   language: TranslateIcon,
   safe: ShieldCheckIcon,

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { categories, type CategoryCode } from '../lib/categories'
-import { href, inCategory, labels, localized, ordered, steamCover } from '../lib/presentation'
+import { href, inCategory, labels, localized, ordered, steamCover, steamStore } from '../lib/presentation'
 import type { Collection, Directory, Game, GameCardData, Locale, Site, Tag, View } from '../lib/presentation'
 import { Breadcrumb, More, Section, Title, t } from './elements'
 import { Filter } from './filter'
@@ -11,6 +11,7 @@ import { Icon, type Glyph } from './icons'
 import { Media } from './media'
 import { useContentMode } from './preferences'
 import { useStaticData } from './static-data'
+import homeStyles from './home.module.scss'
 import styles from './site.module.scss'
 
 type ModeProps = { locale: Locale; directory: Directory; expanded: boolean }
@@ -23,10 +24,13 @@ function RatingBadge({ rating }: { rating: Site['rating'] }) {
   return rating === 'nsfw' ? <span className={styles.ratingBadge}>NSFW</span> : null
 }
 
-function SiteRow({ site, locale, compact = false }: { site: Site; locale: Locale; compact?: boolean }) {
+function SiteRow({ site, locale, compact = false, searchResult = false }: {
+  site: Site; locale: Locale; compact?: boolean; searchResult?: boolean
+}) {
   const name = localized(site.title, locale)
   const description = localized(site.description, locale)
-  return <a href={href(locale, '/site/' + site.id)} className={styles.siteRow + (compact ? ' ' + styles.compact : '')} data-search-id={compact ? undefined : site.id}>
+  const className = [styles.siteRow, compact && styles.compact, searchResult && styles.siteSearchResult].filter(Boolean).join(' ')
+  return <a href={href(locale, '/site/' + site.id)} className={className} data-search-id={compact ? undefined : site.id}>
     <Media kind="logo" src={site.logo} eager={compact} />
     <span className={styles.siteCopy}>
       <strong>{name}<RatingBadge rating={site.rating} /></strong>
@@ -42,15 +46,24 @@ function gameCover(game: GameCardData) {
 
 function GameCard({ game, locale, tags }: { game: GameCardData; locale: Locale; tags: Tag[] }) {
   const name = localized(game.title, locale)
-  const visibleTags = game.tags.map(({ id }) => tags.find((tag) => tag.id === id))
-    .filter((tag) => tag?.category === 'classification').slice(0, 3)
-  return <a href={href(locale, '/games/' + game.id)} className={styles.gameCard} data-search-id={game.id}>
-    <Media src={gameCover(game)} />
-    <div className={styles.gameCaption}>
-      <strong>{name}<RatingBadge rating={game.rating} /></strong>
-      {visibleTags.length > 0 && <span>{visibleTags.map((tag) => localized(tag!.title, locale)).join(' · ')}</span>}
-    </div>
-  </a>
+  const visibleTags = game.tags.flatMap(({ id }) => tags.find((tag) => tag.id === id && tag.category === 'classification') ?? []).slice(0, 3)
+  const storeLabel = t(locale, '前往 Steam 商店', 'View on Steam')
+  return <div className={styles.gameCard}>
+    <a className={styles.gameCoverLink} href={href(locale, '/games/' + game.id)} data-search-id={game.id}>
+      <Media src={gameCover(game)} />
+      <span className={styles.gameTitle}>
+        <strong>{name}</strong><RatingBadge rating={game.rating} />
+      </span>
+      {visibleTags.length > 0 && <span className={styles.gameTags}>{visibleTags.map(({ id, title }) => {
+        const label = localized(title, locale)
+        return <span key={id} title={label}>{label}</span>
+      })}</span>}
+    </a>
+    <a className={styles.gameSteam} href={steamStore(game.appId)} target="_blank" rel="noopener noreferrer"
+      aria-label={storeLabel + ' · ' + name} title={storeLabel}>
+      <Icon name="steam" size={18} />
+    </a>
+  </div>
 }
 
 function CollectionCard({ item, locale, games }: { item: Collection; locale: Locale; games: GameCardData[] }) {
@@ -70,14 +83,23 @@ function Home({ locale, directory, expanded }: ModeProps) {
   const spotlight = featuredGames.slice(0, 4).flatMap((id) => games.find((game) => game.id === id) ?? [])
   return <Filter locale={locale} kind="sites" expanded={expanded}
     searchLayout={(search) => <HomeLead locale={locale} search={search} />}
-    entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} /> }))}
+    entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} searchResult /> }))}
     beforeResults={<>
       <Section title={t(locale, '探索分类', 'Explore categories')}
-        more={<More to={href(locale, '/site-groups')}>{labels[locale]['site-groups']}</More>}>
+        more={<a className={homeStyles.sectionAction} href={href(locale, '/site-groups')}>
+          <span>{labels[locale]['site-groups']}</span>
+        </a>}>
         <HomeCategories locale={locale} sites={sites} />
       </Section>
       <Section title={t(locale, '兽游发现', 'Discover games')}
-        more={<div className={styles.sectionLinks}><a href={href(locale, '/games/collections')}>{labels[locale].collections}</a><More to={href(locale, '/games')}>{t(locale, '全部游戏', 'All games')}</More></div>}>
+        more={<nav className={homeStyles.sectionActions} aria-label={t(locale, '兽游发现', 'Discover games')}>
+          <a className={homeStyles.sectionAction} href={href(locale, '/games/collections')}>
+            <span>{labels[locale].collections}</span>
+          </a>
+          <a className={homeStyles.sectionAction} href={href(locale, '/games')}>
+            <span>{t(locale, '全部游戏', 'All games')}</span>
+          </a>
+        </nav>}>
         <div className={styles.gameGrid}>{spotlight.map((game) => <GameCard key={game.id} game={game} locale={locale} tags={tags} />)}</div>
       </Section>
     </>} />
@@ -224,7 +246,6 @@ function GameDetail({ game, locale, directory }: { game: Game } & ModeProps) {
   const name = localized(game.title, locale)
   const description = localized(game.description, locale)
   const longText = game.body ? localized(game.body, locale) : ''
-  const officialSteam = 'https://store.steampowered.com/app/' + game.appId + '/'
   const tags = game.tags.map(({ id, role }) => ({ item: directory.tags.find((tag) => tag.id === id), role }))
   const collections = directory.collections.filter((item) => item.members.includes(game.id))
   const platforms = game.platforms.map((platform) => ({ linux: 'Linux', mac: 'macOS', windows: 'Windows' })[platform] ?? platform)
@@ -244,7 +265,7 @@ function GameDetail({ game, locale, directory }: { game: Game } & ModeProps) {
           {description && <p>{description}</p>}
           {tags.length > 0 && <Tags>{tags.filter(({ item }) => item?.category === 'classification').slice(0, 4)
             .map(({ item }) => <span key={item!.id}>{localized(item!.title, locale)}</span>)}</Tags>}
-          <div className={styles.actions}><External url={officialSteam}>{t(locale, '前往 Steam 商店', 'View on Steam')}</External></div>
+          <div className={styles.actions}><External url={steamStore(game.appId)}>{t(locale, '前往 Steam 商店', 'View on Steam')}</External></div>
         </div>
       </div>
       <div className={styles.detailSplit}>
