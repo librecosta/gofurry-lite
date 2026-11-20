@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ChangeEvent, type CompositionEvent, type ReactNode } from 'react'
+import { FloatingSearch } from './floating-search'
 import { Icon } from './icons'
 import { useStaticData } from './static-data'
 import styles from './site.module.scss'
@@ -15,13 +16,15 @@ type Props = {
   locale: 'zh' | 'en'
   kind: 'sites' | 'games'
   expanded: boolean
-  home?: boolean
+  searchLayout?: (search: ReactNode) => ReactNode
   beforeResults?: ReactNode
 }
 const normalize = (value: string) => value.normalize('NFKC').toLocaleLowerCase().trim()
 
-export function Filter({ entries, group = [], locale, kind, expanded, home = false, beforeResults }: Props) {
+export function Filter({ entries, group = [], locale, kind, expanded, searchLayout, beforeResults }: Props) {
+  const [text, setText] = useState('')
   const [query, setQuery] = useState('')
+  const composing = useRef(false)
   const [tags, setTags] = useState<number[]>([])
   const selected = group.map(({ options }, i) => options.some(({ id }) => id === tags[i]) ? tags[i] : 0)
   const words = normalize(query).split(/\s+/).filter(Boolean)
@@ -41,30 +44,47 @@ export function Filter({ entries, group = [], locale, kind, expanded, home = fal
     })
     : entries
 
+  const field = {
+    type: 'search',
+    value: text,
+    onChange: (event: ChangeEvent<HTMLInputElement>) => {
+      setText(event.currentTarget.value)
+      if (!composing.current) setQuery(event.currentTarget.value)
+    },
+    onCompositionStart: () => { composing.current = true },
+    onCompositionEnd: (event: CompositionEvent<HTMLInputElement>) => {
+      composing.current = false
+      setText(event.currentTarget.value)
+      setQuery(event.currentTarget.value)
+    },
+  }
+
   return <div>
-    <div className={styles.filters}>
-      <label className={styles.search}>
-        <Icon name="search" />
-        <span className="sr-only">{searchLabel}</span>
-        <input type="search" placeholder={searchLabel} value={query} onChange={(event) => setQuery(event.target.value)} />
-      </label>
-      {group.length > 0 && <div className={styles.selectors}>
-        {group.map(({ name, options }, position) => <label key={name}>
-          <span>{name}</span>
-          <select value={selected[position]} onChange={(event) => {
-            const value = Number(event.target.value)
-            setTags(Array.from({ length: group.length }, (_, i) => i === position ? value : selected[i]))
-          }}>
-            <option value={0}>{zh ? '全部' : 'All'}</option>
-            {options.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
-          </select>
-        </label>)}
+    {searchLayout ? searchLayout(<FloatingSearch field={field} label={zh ? '搜索兽圈网站' : 'Search furry websites'}
+      clearLabel={zh ? '清除搜索' : 'Clear search'} onClear={() => { setText(''); setQuery('') }} />)
+      : <div className={styles.filters}>
+        <label className={styles.search}>
+          <Icon name="search" />
+          <span className="sr-only">{searchLabel}</span>
+          <input {...field} placeholder={searchLabel} />
+        </label>
+        {group.length > 0 && <div className={styles.selectors}>
+          {group.map(({ name, options }, position) => <label key={name}>
+            <span>{name}</span>
+            <select value={selected[position]} onChange={(event) => {
+              const value = Number(event.target.value)
+              setTags(Array.from({ length: group.length }, (_, i) => i === position ? value : selected[i]))
+            }}>
+              <option value={0}>{zh ? '全部' : 'All'}</option>
+              {options.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+            </select>
+          </label>)}
+        </div>}
       </div>}
-    </div>
     {active && !index && <p className={styles.notice} role="status">{source?.failed ? (zh ? '搜索暂不可用。' : 'Search is currently unavailable.') : (zh ? '正在加载索引…' : 'Loading the search index…')}</p>}
     {active && index && <p className={styles.notice} role="status">{zh ? '符合条件的结果 ' + results.length + ' 条' : results.length + (results.length === 1 ? ' result' : ' results')}</p>}
     {!active && beforeResults}
-    {(!home || active) && <div className={kind === 'games' ? styles.gameGrid : styles.siteGrid} data-results={kind}>
+    {(!searchLayout || active) && <div className={kind === 'games' ? styles.gameGrid : styles.siteGrid} data-results={kind}>
       {results.map(({ card }) => card)}
     </div>}
   </div>

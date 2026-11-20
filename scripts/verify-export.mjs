@@ -8,22 +8,25 @@ const out = resolve('out')
 const expected = new Set(manifest.pages)
 const restricted = new Set(manifest.restrictedPaths)
 const ordinary = new Set(manifest.pages.filter((path) => !restricted.has(path)))
-const errors = ['404', 'en/status/not-found', 'en/status/gone', 'status/not-found', 'status/gone', '_not-found', '_global-error']
+const errors = ['404', 'zh/status/not-found', 'zh/status/gone', 'status/not-found', 'status/gone', '_not-found', '_global-error']
 for (const path of expected) {
   const filename = path === '/' ? '/index.html' : path + '.html'
   const html = await read('out' + filename)
-  const locale = path === '/en' || path.startsWith('/en/') ? 'en' : 'zh-CN'
-  assert(html.includes('lang="' + locale + '"'), path)
+  const zh = path === '/zh' || path.startsWith('/zh/')
+  const localPath = path.replace(/^\/zh(?=\/|$)/, '') || '/'
+  const zhPath = '/zh' + (localPath === '/' ? '' : localPath)
+  assert.match(html, new RegExp('<html lang="' + (zh ? 'zh-CN' : 'en') + '"'), path)
   assert.match(html, /<h1[ >]/, path)
   assert(html.includes('rel="canonical" href="https://go-furry.com' + path + '"'), path)
-  assert(html.includes('hrefLang="zh-CN"') && html.includes('hrefLang="en"'), path)
+  for (const [language, target] of [['en', localPath], ['zh-CN', zhPath], ['x-default', localPath]]) {
+    assert(html.includes('hrefLang="' + language + '" href="https://go-furry.com' + target + '"'), path)
+  }
   assert(html.includes('property="og:title"'), path)
   assert(html.includes('https://go-furry.com/media/brand/gofurry-lite-og.png'), path)
   assert(html.includes('name="twitter:card" content="summary_large_image"'), path)
   assert.equal(html.includes('name="robots" content="noindex, nofollow"'), restricted.has(path), path)
-  const localPath = path.replace(/^\/en(?=\/|$)/, '') || '/'
   if (localPath === '/' || /^(?:\/categories\/|\/site-groups(?:\/|$)|\/games(?:$|\/collections(?:\/|$)))/.test(localPath)) {
-    for (const [, link] of html.matchAll(/href="((?:\/en)?\/(?:site|games)\/\d+)"/g)) {
+    for (const [, link] of html.matchAll(/href="((?:\/zh)?\/(?:site|games)\/\d+)"/g)) {
       assert(!restricted.has(link), path + ' lists ' + link)
     }
   }
@@ -56,7 +59,7 @@ const urls = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
 assert.equal(new Set(urls).size, ordinary.size)
 assert.equal(urls.length, ordinary.size)
 assert(urls.every((url) => ordinary.has(url.slice('https://go-furry.com'.length))))
-for (const file of ['robots.txt', 'status/gone.html', 'status/not-found.html', 'en/status/gone.html', 'en/status/not-found.html']) {
+for (const file of ['robots.txt', 'status/gone.html', 'status/not-found.html', 'zh/status/gone.html', 'zh/status/not-found.html']) {
   assert((await stat(resolve(out, file))).isFile(), file)
 }
 const og = await readFile(resolve(out, 'media/brand/gofurry-lite-og.png'))

@@ -6,6 +6,11 @@ import { href, intro, labels, localized, type Locale } from './presentation'
 export const origin = 'https://go-furry.com'
 export { href } from './presentation'
 
+export function languageUrls(path: string) {
+  const en = origin + href('en', path)
+  return { en, 'zh-CN': origin + href('zh', path), 'x-default': en }
+}
+
 const landingPages = ['games', 'games/collections', 'updates', 'about', 'privacy', 'terms', 'site-groups']
   .map((page) => '/' + page)
 export function publicPaths(includeNsfw = false) {
@@ -57,8 +62,8 @@ export function metadataFor(locale: Locale, segments: string[]): Metadata {
   return {
     title, description, icons: '/media/brand/gofurry-favicon.png',
     ...(restricted && { robots: { index: false, follow: false } }),
-    alternates: { canonical, languages: { 'zh-CN': origin + path, en: origin + href('en', path) } },
-    openGraph: { title, description, url: canonical, siteName: 'GoFurry Lite', type: 'website', locale: locale === 'zh' ? 'zh_CN' : 'en_US', images: [{ url: image, width: 1200, height: 630, alt: 'GoFurry Lite' }] },
+    alternates: { canonical, languages: languageUrls(path) },
+    openGraph: { title, description, url: canonical, siteName: 'GoFurry Lite', type: 'website', locale: locale === 'zh' ? 'zh_CN' : 'en_US', alternateLocale: locale === 'zh' ? 'en_US' : 'zh_CN', images: [{ url: image, width: 1200, height: 630, alt: 'GoFurry Lite' }] },
     twitter: { card: 'summary_large_image', title, description, images: [image] },
   }
 }

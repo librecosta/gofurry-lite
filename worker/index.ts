@@ -50,12 +50,13 @@ export default {
     }
     const isWww = url.hostname !== new URL(request.url).hostname
     const path = rawPath.replace(/\/+$/, '') || '/'
-    const en = path === '/en' || path.startsWith('/en/')
-    const prefix = en ? '/en' : ''
-    const localPath = path.slice(prefix.length) || '/'
+    const oldEnglish = /^\/en(?:\/|$)/.test(path)
+    const prefix = /^\/zh(?:\/|$)/.test(path) ? '/zh' : ''
+    const localPath = path.slice(oldEnglish ? '/en'.length : prefix.length) || '/'
     const target = routeLegacy(localPath)
-    const canonical = prefix + (target === '/' && en ? '' : target)
+    const canonical = prefix + (prefix && target === '/' ? '' : target)
 
+    if (oldEnglish) return redirect(url, pages.has(canonical) ? canonical : localPath)
     if (path === '/favicon.ico' || path === '/favicon.svg') return redirect(url, '/media/brand/gofurry-favicon.png')
     if (path === '/healthz') {
       if (isWww || path !== rawPath) return redirect(url, path)

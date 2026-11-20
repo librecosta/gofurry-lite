@@ -1,6 +1,6 @@
-import { buildParams, metadataFor } from '../../../src/lib/routes'
-import { SitePage } from '../../../src/components/pages'
-import { Shell } from '../../../src/components/shell'
+import { buildParams, metadataFor } from '../../../../src/lib/routes'
+import { SitePage } from '../../../../src/components/pages'
+import { Shell } from '../../../../src/components/shell'
 
 type Props = { params: Promise<{ path?: string[] }> }
 export const dynamicParams = false

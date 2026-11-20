@@ -2,10 +2,11 @@
 
 import type { ReactNode } from 'react'
 import { categories, type CategoryCode } from '../lib/categories'
-import { href, inCategory, intro, labels, localized, ordered, steamCover } from '../lib/presentation'
+import { href, inCategory, labels, localized, ordered, steamCover } from '../lib/presentation'
 import type { Collection, Directory, Game, GameCardData, Locale, Site, Tag, View } from '../lib/presentation'
 import { Breadcrumb, More, Section, Title, t } from './elements'
 import { Filter } from './filter'
+import { HomeCategories, HomeLead } from './home-directory'
 import { Icon, type Glyph } from './icons'
 import { Media } from './media'
 import { useContentMode } from './preferences'
@@ -67,36 +68,19 @@ function Home({ locale, directory, expanded }: ModeProps) {
   const { sites, games, tags, featuredGames } = directory
   const listed = ordered(sites, locale)
   const spotlight = featuredGames.slice(0, 4).flatMap((id) => games.find((game) => game.id === id) ?? [])
-  return <>
-    <Title title={intro[locale].title} description={intro[locale].description} />
-    <Filter locale={locale} kind="sites" home expanded={expanded}
-      entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} /> }))}
-      beforeResults={<>
+  return <Filter locale={locale} kind="sites" expanded={expanded}
+    searchLayout={(search) => <HomeLead locale={locale} search={search} />}
+    entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} /> }))}
+    beforeResults={<>
       <Section title={t(locale, '探索分类', 'Explore categories')}
         more={<More to={href(locale, '/site-groups')}>{labels[locale]['site-groups']}</More>}>
-        <div className={styles.categoryGrid}>
-          {categories.map(([code, zh, en, , , icon]) => {
-            const heading = locale === 'zh' ? zh : en
-            const members = ordered(sites.filter((site) => inCategory(site, code)), locale)
-            return <section key={code} className={styles.categoryCard} aria-label={heading}>
-              <h3><a href={href(locale, '/categories/' + code)}><span className={styles.categoryIcon}><Icon name={icon} /></span>{heading}</a></h3>
-              <div className={styles.categoryEntries}>
-                {members.slice(0, 8).map((site) => <SiteRow key={site.id} site={site} locale={locale} compact />)}
-              </div>
-              <div className={styles.categoryFooter}>
-                <span>{members.length} {t(locale, '个站点', members.length === 1 ? 'site' : 'sites')}</span>
-                <More to={href(locale, '/categories/' + code)}>{t(locale, '查看全部', 'View all')}</More>
-              </div>
-            </section>
-          })}
-        </div>
+        <HomeCategories locale={locale} sites={sites} />
       </Section>
       <Section title={t(locale, '兽游发现', 'Discover games')}
         more={<div className={styles.sectionLinks}><a href={href(locale, '/games/collections')}>{labels[locale].collections}</a><More to={href(locale, '/games')}>{t(locale, '全部游戏', 'All games')}</More></div>}>
         <div className={styles.gameGrid}>{spotlight.map((game) => <GameCard key={game.id} game={game} locale={locale} tags={tags} />)}</div>
       </Section>
     </>} />
-  </>
 }
 
 function SiteDirectory({ title, description, entries, locale, icon, expanded }: {

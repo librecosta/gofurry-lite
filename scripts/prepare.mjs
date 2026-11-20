@@ -114,8 +114,8 @@ const ordinarySites = catalog.sites.filter(({ rating }) => rating === 'sfw')
 const ordinaryGames = catalog.games.filter(({ rating }) => rating === 'sfw')
 assert.equal(ordinarySites.length, 197)
 assert.equal(ordinaryGames.length, 203)
-const pathEn = (path) => path === '/' ? '/en' : '/en' + path
-const bilingual = (paths) => [...paths, ...paths.map(pathEn)]
+const pathZh = (path) => path === '/' ? '/zh' : '/zh' + path
+const bilingual = (paths) => [...paths, ...paths.map(pathZh)]
 const directoryPaths = [
   '/', '/games', '/games/collections', '/updates', '/about', '/privacy', '/terms', '/site-groups',
   ...codes.map((code) => '/categories/' + code),
@@ -149,8 +149,8 @@ function directory(sites, games) {
   const allowedGames = new Set(games.map(({ id }) => id))
   const tags = new Set(games.flatMap((game) => visibleTags(game).map(({ id }) => id)))
   return {
-    sites: sites.map(({ id, title, description, rating, groups, logo }) => ({
-      id, title, description, rating, groups, logo, category: approved[id],
+    sites: sites.map(({ id, title, description, rating, groups, logo, url }) => ({
+      id, title, description, rating, groups, logo, url, category: approved[id],
     })),
     games: games.map(({ id, title, description, rating, appId, cover, tags }) => ({
       id, title, description, rating, appId, cover, tags: visibleTags({ rating, tags }),

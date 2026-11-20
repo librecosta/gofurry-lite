@@ -17,4 +17,6 @@ Favicon、横向标识和符号直接复用新 GoFurry 品牌资源。Lite 分�
 
 界面交互动效使用 Motion for React。 [项目](https://motion.dev/docs/react) · [MIT 许可](motion-license.txt)
 
+首页搜索框的浮动标签、描边缺口及逐字过渡改编自 Lorenzo Cabra 的 Bencho Label Input。 [MIT 许可](bencho-license.txt)
+
 固定背景点阵采用 Tool4Furry 的两侧渐隐布局及响应式参数。 [布局源码](https://github.com/librecosta/tool4furry/blob/a14429a384b2cd7df6fc475f5a30642560a368fa/src/layouts/SiteLayout.module.scss) · [主题参数](https://github.com/librecosta/tool4furry/blob/a14429a384b2cd7df6fc475f5a30642560a368fa/src/styles/tokens.scss) · [BSD 3-Clause 许可](tool4furry-license.txt)

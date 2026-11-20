@@ -30,7 +30,7 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 820 })
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' })
     await page.route(/steamstatic\.com/, (route) => route.abort())
-    await page.goto('/en')
+    await page.goto('/')
     await page.evaluate(() => scrollTo(0, 190))
     const trigger = page.getByRole('button', { name: 'Toggle light or dark theme' })
     await expect(trigger).toBeEnabled()
@@ -56,7 +56,7 @@ for (const width of [1440, 390]) {
 
 test('desktop content switch keeps the mode label opposite the knob inside the capsule', async ({ page }) => {
   await page.route(/steamstatic\.com/, (route) => route.abort())
-  await page.goto('/en/about')
+  await page.goto('/about')
   const mode = page.getByRole('switch', { name: 'NSFW content' })
   const track = mode.locator(':scope > span[aria-hidden]')
   const knob = track.locator('span:last-child')
@@ -98,7 +98,7 @@ test('theme changes after footer hover keep footer and capsule colors on the cur
   await page.setViewportSize({ width: 1440, height: 800 })
   await page.emulateMedia({ colorScheme: 'light' })
   await page.route(/steamstatic\.com/, (route) => route.abort())
-  await page.goto('/en')
+  await page.goto('/')
   const theme = page.getByRole('button', { name: 'Toggle light or dark theme' })
   const capsule = page.getByRole('switch', { name: 'NSFW content' })
   await capsule.click()
@@ -143,7 +143,7 @@ test('theme changes after footer hover keep footer and capsule colors on the cur
 test('scroll gauge follows document scrolling, seeks by track, drags, and handles keyboard and resize', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await page.route(/steamstatic\.com/, (route) => route.abort())
-  await page.goto('/en')
+  await page.goto('/')
   const gauge = page.getByRole('slider', { name: 'Reading progress' })
   await expect(gauge).toBeVisible()
   await expect(page.locator('html')).toHaveCSS('scrollbar-width', 'none')
@@ -177,7 +177,7 @@ test('scroll gauge follows document scrolling, seeks by track, drags, and handle
   await gauge.press('Home')
   await expect(gauge).toHaveText('0%')
   expect(await readScroll()).toBe(0)
-  await page.goto('/en/about')
+  await page.goto('/about')
   await expect(gauge).toBeHidden()
   await page.setViewportSize({ width: 1280, height: 230 })
   await expect(gauge).toBeVisible()
@@ -190,7 +190,7 @@ test('mobile bottom bands span the viewport and the copyright follows the curren
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await page.clock.setFixedTime(new Date('2026-11-20T00:00:00Z'))
   await page.route(/steamstatic\.com/, (route) => route.abort())
-  await page.goto('/en')
+  await page.goto('/')
   await page.evaluate(() => scrollTo(0, document.body.scrollHeight))
   const dock = page.getByRole('navigation', { name: 'Bottom navigation' })
   const gauge = page.getByRole('slider', { name: 'Reading progress' })
@@ -247,7 +247,7 @@ test('Chinese and English home guide headings and prose are available with JavaS
   try {
     const page = await context.newPage()
     await page.route(/steamstatic\.com/, (route) => route.abort())
-    for (const [path, name] of [['/', 'GoFurry Lite 导览'], ['/en', 'A guide to GoFurry Lite']]) {
+    for (const [path, name] of [['/zh', 'GoFurry Lite 导览'], ['/', 'A guide to GoFurry Lite']]) {
       await page.goto(path)
       const guide = page.getByRole('region', { name })
       await expect(guide.getByRole('heading', { name, level: 2 })).toBeVisible()
@@ -256,7 +256,7 @@ test('Chinese and English home guide headings and prose are available with JavaS
       expect((await guide.innerText()).length).toBeGreaterThan(800)
       expect(await guide.evaluate((element) => element.getBoundingClientRect().width)).toBe(await page.evaluate(() => innerWidth))
     }
-    await page.goto('/en/games/collections')
+    await page.goto('/games/collections')
     await expect(page.getByRole('region', { name: 'A guide to GoFurry Lite' })).toHaveCount(0)
   } finally {
     await context.close()

@@ -8,7 +8,7 @@ export const viewport: Viewport = { viewportFit: 'cover' }
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
       <body>
         <div className="page-dots" aria-hidden="true" />
         {children}

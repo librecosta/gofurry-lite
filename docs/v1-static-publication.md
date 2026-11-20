@@ -27,9 +27,9 @@ SFW 模式的目录、相关条目和搜索索引在构建时单独生成。Head
 
 ## 路由
 
-中文根目录为 `/`，英语为 `/en`。两种语言都提供 `/categories/:code`、`/site-groups`、`/site-groups/:id`、`/site/:id`、`/games`、`/games/:id`、`/games/collections`、`/games/collections/:code`、`/updates`、`/updates/:id`、`/about`、`/privacy` 和 `/terms`。
+英语使用根目录 `/`，简体中文使用 `/zh`。两种语言都提供 `/categories/:code`、`/site-groups`、`/site-groups/:id`、`/site/:id`、`/games`、`/games/:id`、`/games/collections`、`/games/collections/:code`、`/updates`、`/updates/:id`、`/about`、`/privacy` 和 `/terms`。这些路径在中文版统一带有 `/zh` 前缀。
 
-已知的历史入口和带历史域名后缀的站点路由返回 301，保留语言和查询字符串。已退休路径、22 条明确软删站点和游戏 355 返回 410。未知 ID 返回 404。www 与尾斜杠的有效站点路由收敛到 canonical。
+旧英文入口 `/en` 和 `/en/*` 返回 301 到对应的无前缀路径，保留查询字符串。已知的历史入口和带历史域名后缀的站点路由返回 301，保留语言和查询字符串。已退休路径、22 条明确软删站点和游戏 355 在规范路径返回 410。未知 ID 在规范路径返回 404。www 与尾斜杠的有效站点路由收敛到 canonical。
 
 ## 重建封板快照
 

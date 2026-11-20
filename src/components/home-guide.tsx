@@ -27,8 +27,8 @@ export function HomeGuide({ locale }: { locale: Locale }) {
       <div className={styles.prose}>
         <h3>{zh ? '通过八个分类发现兽圈网站' : 'Discover furry websites across eight categories'}</h3>
         <p>{zh
-          ? '先按你想做的事选分类。想找同好，可以从社区开始。想了解一场兽展，可以到活动分类。首页每个分类只展示部分条目，打开分类页后可以继续浏览或在该分类内搜索。'
-          : 'Start with what you want to do. Communities are a useful starting point for meeting other fans, while events are where to look for information about a convention. Each homepage card shows a selection. Open its category to see more entries or search within it.'}</p>
+          ? '先按你想做的事选分类。想找同好，可以从社区开始。想了解一场兽展，可以到活动分类。首页卡片内可滚动浏览当前模式下的全部站点，也可打开分类页查看简介和搜索。'
+          : 'Start with what you want to do. Communities are a useful starting point for meeting other fans, while events are where to look for information about a convention. Scroll within a homepage card to browse every site in that category for your content mode. Open the category page to read descriptions and search the list.'}</p>
       </div>
       <ul className={styles.categories}>
         {categories.map(([code, nameZh, nameEn]) => <li key={code}>

@@ -7,7 +7,7 @@ export type Translation = { zh: string; en: string }
 export type Copy = { title: Translation; description: Translation }
 export type Classification = { primary: CategoryCode; secondary: CategoryCode[] }
 export type Site = Copy & { id: number; rating: Rating; groups: number[]; logo?: string; url?: string }
-export type DirectorySite = Omit<Site, 'url'> & { category: Classification }
+export type DirectorySite = Site & { category: Classification }
 export type Group = Copy & { id: number; members: number[] }
 export type GameCardData = Copy & { id: number; rating: Rating; appId: number; cover?: string; tags: { id: number; role: string }[] }
 export type Game = GameCardData & {
@@ -36,7 +36,7 @@ export const labels = {
 }
 
 export function href(locale: Locale, path = '/') {
-  return locale === 'zh' ? path : '/en' + (path === '/' ? '' : path)
+  return locale === 'en' ? path : '/zh' + (path === '/' ? '' : path)
 }
 
 export function localized(value: Translation, locale: Locale) {

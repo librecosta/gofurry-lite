@@ -46,6 +46,10 @@ test('locale indexes match the two catalogue projections and keep historical evi
     }
   }
   assert(!complete.sites.some((row) => 'legacyNsfw' in row))
+  const archivedSiteUrls = new Map(catalog.sites.map(({ id, url }) => [id, url]))
+  for (const directory of [ordinary, complete]) {
+    assert(directory.sites.every(({ id, url }) => url === archivedSiteUrls.get(id)))
+  }
   for (const [path, kind, id] of manifest.restrictedPaths.map((path) => path.match(/^\/(site|games)\/(\d+)$/)).filter(Boolean)) {
     const detail = read('public/indexes/extended/' + (kind === 'games' ? 'game' : kind) + '/' + id + '.json')
     assert.equal(detail.id, Number(id), path)

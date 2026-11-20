@@ -68,7 +68,7 @@
   }
 }
 
-.titleIcon, .categoryIcon {
+.titleIcon {
   display: grid;
   place-items: center;
   flex: none;
@@ -76,9 +76,9 @@
   color: var(--brand);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
+  width: 44px;
+  height: 44px;
 }
-.titleIcon { width: 44px; height: 44px; }
-.categoryIcon { width: 32px; height: 32px; }
 
 .search {
   display: flex;
@@ -187,57 +187,14 @@
   &:hover { text-decoration: underline; }
 }
 
-.categoryGrid, .siteGrid, .gameGrid, .collectionGrid {
+.siteGrid, .gameGrid, .collectionGrid {
   display: grid;
   gap: 12px;
   min-width: 0;
   align-items: stretch;
 }
-.categoryGrid, .gameGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.gameGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .siteGrid, .collectionGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-.categoryCard {
-  @include panel;
-
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding: 12px 13px 8px;
-
-  h3 {
-    font-size: 1rem;
-    font-weight: 830;
-    margin-bottom: 8px;
-
-    a {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      &:hover { color: var(--brand); }
-    }
-  }
-}
-
-.categoryEntries {
-  display: grid;
-  gap: 1px;
-  align-content: start;
-  flex: 1;
-}
-
-.categoryFooter {
-  @include muted;
-
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0 6px;
-  margin-top: 9px;
-  padding-top: 3px;
-  border-top: 1px solid var(--border);
-}
 
 .siteRow, .indexItem {
   @include panel;
@@ -588,7 +545,6 @@
 }
 
 @media (width <= 1050px) {
-  .categoryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .siteGrid, .gameGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
@@ -599,9 +555,6 @@
 
 @media (width <= 450px) {
   .siteGrid { grid-template-columns: minmax(0, 1fr); }
-  .categoryCard { padding-inline: 8px; }
-  .categoryCard h3 a { gap: 5px; }
-  .categoryIcon { width: 25px; height: 25px; }
   .compact { padding-inline: 1px; gap: 4px; }
   .compact .logo { width: 20px; height: 20px; }
   .gameCaption, .collectionCaption { padding: 8px; }
