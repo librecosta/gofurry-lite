@@ -192,6 +192,12 @@
   margin-inline-start: auto;
 }
 
+.homeGameGrid[data-home-games] {
+  @media (width < 600px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 // The Tool4Furry homepage uses a fine underline that recedes on interaction.
 .sectionAction {
   display: inline-flex;

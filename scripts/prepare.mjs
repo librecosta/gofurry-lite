@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises'
 import assert from 'node:assert/strict'
+import { gameCardLabels, homeGameCount } from '../src/lib/home-games.ts'
 
 const root = new URL('../', import.meta.url)
 const file = (path) => new URL(path, root)
@@ -157,7 +158,6 @@ function directory(sites, games) {
     })),
     groups: catalog.groups.map(({ members, ...group }) => ({ ...group, members: members.filter((id) => allowedSites.has(id)) })),
     collections: catalog.collections.map(({ members, ...item }) => ({ ...item, members: members.filter((id) => allowedGames.has(id)) })),
-    featuredGames: catalog.featuredGames.filter((id) => allowedGames.has(id)),
     tags: catalog.tags.filter(({ id }) => tags.has(id)),
   }
 }
@@ -176,8 +176,31 @@ function indexRow(entry, locale) {
 
 const extended = 'public/indexes/extended/'
 await Promise.all(['site', 'game'].map((kind) => mkdir(file(extended + kind + '/'), { recursive: true })))
-await writeJson('src/generated/directory.json', directory(ordinarySites, ordinaryGames))
-await writeJson(extended + 'directory.json', directory(catalog.sites, catalog.games))
+const ordinaryDirectory = directory(ordinarySites, ordinaryGames)
+const extendedDirectory = directory(catalog.sites, catalog.games)
+await writeJson('src/generated/directory.json', ordinaryDirectory)
+await writeJson(extended + 'directory.json', extendedDirectory)
+
+function projectGameCards(games) {
+  return games.map((game) => {
+    const { id, title, rating, appId, cover } = game
+    const labels = gameCardLabels(game, (tagId) => tagIds.get(tagId))
+    return { id, title, rating, appId, cover, labels }
+  })
+}
+
+const ordinaryCards = projectGameCards(ordinaryDirectory.games)
+const cardsById = new Map(ordinaryCards.map((game) => [game.id, game]))
+const featured = [...new Set(catalog.featuredGames)].flatMap((id) => cardsById.get(id) ?? [])
+const featuredIds = new Set(featured.map(({ id }) => id))
+const initialCards = [...featured, ...ordinaryCards.filter(({ id }) => !featuredIds.has(id))].slice(0, homeGameCount)
+assert.equal(initialCards.length, homeGameCount)
+await writeJson('src/generated/home.json', { sites: ordinaryDirectory.sites, games: initialCards })
+await writeJson('public/indexes/home-games.json', ordinaryCards)
+await writeJson(extended + 'home-directory.json', {
+  sites: extendedDirectory.sites, games: projectGameCards(extendedDirectory.games),
+})
+
 for (const [kind, entries] of [['site', catalog.sites], ['game', catalog.games]]) {
   const path = extended + kind + '/'
   const details = new Set()

@@ -2,11 +2,13 @@
 
 import type { ReactNode } from 'react'
 import { categories, type CategoryCode } from '../lib/categories'
+import { gameCardLabels, type HomeDirectory, type HomeGame } from '../lib/home-games'
 import { href, inCategory, labels, localized, ordered, steamCover, steamStore } from '../lib/presentation'
 import type { Collection, Directory, Game, GameCardData, Locale, Site, Tag, View } from '../lib/presentation'
 import { Breadcrumb, More, Section, Title, t } from './elements'
 import { Filter } from './filter'
 import { HomeCategories, HomeLead } from './home-directory'
+import { useHomeGameRotation } from './home-game-rotation'
 import { Icon, type Glyph } from './icons'
 import { Media } from './media'
 import { useContentMode } from './preferences'
@@ -40,13 +42,13 @@ function SiteRow({ site, locale, compact = false, searchResult = false }: {
   </a>
 }
 
-function gameCover(game: GameCardData) {
+function gameCover(game: Pick<GameCardData, 'appId' | 'cover'>) {
   return game.cover || steamCover(game.appId)
 }
 
-function GameCard({ game, locale, tags }: { game: GameCardData; locale: Locale; tags: Tag[] }) {
+function GameCard({ game, locale, tags = [] }: { game: GameCardData | HomeGame; locale: Locale; tags?: Tag[] }) {
   const name = localized(game.title, locale)
-  const visibleTags = game.tags.flatMap(({ id }) => tags.find((tag) => tag.id === id && tag.category === 'classification') ?? []).slice(0, 3)
+  const visibleLabels = 'labels' in game ? game.labels : gameCardLabels(game, (id) => tags.find((tag) => tag.id === id))
   const storeLabel = t(locale, '前往 Steam 商店', 'View on Steam')
   return <div className={styles.gameCard}>
     <a className={styles.gameCoverLink} href={href(locale, '/games/' + game.id)} data-search-id={game.id}>
@@ -54,7 +56,7 @@ function GameCard({ game, locale, tags }: { game: GameCardData; locale: Locale; 
       <span className={styles.gameTitle}>
         <strong>{name}</strong><RatingBadge rating={game.rating} />
       </span>
-      {visibleTags.length > 0 && <span className={styles.gameTags}>{visibleTags.map(({ id, title }) => {
+      {visibleLabels.length > 0 && <span className={styles.gameTags}>{visibleLabels.map(({ id, title }) => {
         const label = localized(title, locale)
         return <span key={id} title={label}>{label}</span>
       })}</span>}
@@ -77,32 +79,37 @@ function CollectionCard({ item, locale, games }: { item: Collection; locale: Loc
   </a>
 }
 
-function Home({ locale, directory, expanded }: ModeProps) {
-  const { sites, games, tags, featuredGames } = directory
+export function HomeView({ locale, initial }: { locale: Locale; initial: HomeDirectory }) {
+  const { directory: { sites, games }, rotation, expanded, pending, failed } = useHomeGameRotation(initial, locale)
   const listed = ordered(sites, locale)
-  const spotlight = featuredGames.slice(0, 4).flatMap((id) => games.find((game) => game.id === id) ?? [])
-  return <Filter locale={locale} kind="sites" expanded={expanded}
-    searchLayout={(search) => <HomeLead locale={locale} search={search} />}
-    entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} searchResult /> }))}
-    beforeResults={<>
-      <Section title={t(locale, '探索分类', 'Explore categories')}
-        more={<a className={homeStyles.sectionAction} href={href(locale, '/site-groups')}>
-          <span>{labels[locale]['site-groups']}</span>
-        </a>}>
-        <HomeCategories locale={locale} sites={sites} />
-      </Section>
-      <Section title={t(locale, '兽游发现', 'Discover games')}
-        more={<nav className={homeStyles.sectionActions} aria-label={t(locale, '兽游发现', 'Discover games')}>
-          <a className={homeStyles.sectionAction} href={href(locale, '/games/collections')}>
-            <span>{labels[locale].collections}</span>
-          </a>
-          <a className={homeStyles.sectionAction} href={href(locale, '/games')}>
-            <span>{t(locale, '全部游戏', 'All games')}</span>
-          </a>
-        </nav>}>
-        <div className={styles.gameGrid}>{spotlight.map((game) => <GameCard key={game.id} game={game} locale={locale} tags={tags} />)}</div>
-      </Section>
-    </>} />
+  return <>
+    {pending && <p className="sr-only" role="status">{t(locale, '正在加载完整目录…', 'Loading the full directory…')}</p>}
+    {failed && <p className={styles.notice} role="status">{t(locale, 'NSFW 资料暂不可用。', 'NSFW entries could not be loaded.')}</p>}
+    <Filter locale={locale} kind="sites" expanded={expanded}
+      searchLayout={(search) => <HomeLead locale={locale} search={search} />}
+      entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} searchResult /> }))}
+      beforeResults={<>
+        <Section title={t(locale, '探索分类', 'Explore categories')}
+          more={<a className={homeStyles.sectionAction} href={href(locale, '/site-groups')}>
+            <span>{labels[locale]['site-groups']}</span>
+          </a>}>
+          <HomeCategories locale={locale} sites={sites} />
+        </Section>
+        <Section title={t(locale, '兽游发现', 'Discover games')}
+          more={<nav className={homeStyles.sectionActions} aria-label={t(locale, '兽游发现', 'Discover games')}>
+            <a className={homeStyles.sectionAction} href={href(locale, '/games/collections')}>
+              <span>{labels[locale].collections}</span>
+            </a>
+            <a className={homeStyles.sectionAction} href={href(locale, '/games')}>
+              <span>{t(locale, '全部游戏', 'All games')}</span>
+            </a>
+          </nav>}>
+          <div className={styles.gameGrid + ' ' + homeStyles.homeGameGrid} data-home-games={rotation ?? 'static'}>
+            {games.map((game) => <GameCard key={game.id} game={game} locale={locale} />)}
+          </div>
+        </Section>
+      </>} />
+  </>
 }
 
 function SiteDirectory({ title, description, entries, locale, icon, expanded }: {
@@ -318,7 +325,6 @@ export function CatalogView({ view, initial, detail, locale }: {
 
   let content: ReactNode
   switch (view.type) {
-    case 'home': content = <Home {...props} />; break
     case 'site': if (record && !('appId' in record)) content = <SiteDetail {...props} site={record} />; break
     case 'game': if (record && 'appId' in record) content = <GameDetail {...props} game={record} />; break
     case 'games': content = <GameDirectory {...props} />; break

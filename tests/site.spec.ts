@@ -303,6 +303,7 @@ test('homepage records visits from detail links and external links without reord
 
 test('game cards cover the full tile and open Steam through an independent link', async ({ page, context }) => {
   await page.route(/steamstatic\.com/, (route) => route.abort())
+  await page.route('**/indexes/home-games.json', (route) => route.abort())
   const game = catalog.games.find(({ id }) => id === catalog.featuredGames[0])!
   const storeUrl = 'https://store.steampowered.com/app/' + game.appId + '/'
   const title = game.title.en
@@ -405,21 +406,98 @@ test('homepage shortcut previews retain their artwork, stay above the buttons an
   await expect(previews).toHaveCount(0)
 })
 
-test('static pages readable without JavaScript', async ({ browser }) => {
-  const context = await browser.newContext({ javaScriptEnabled: false })
+test('static pages readable without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false })
   try {
     const page = await context.newPage()
-    await page.goto('http://127.0.0.1:8787/site/105')
+    await page.route(/steamstatic\.com/, (route) => route.abort())
+    const ordinary = new Set(catalog.games.filter(({ rating }) => rating === 'sfw').map(({ id }) => id))
+    for (const localePrefix of ['', '/zh']) {
+      await page.goto(localePrefix || '/')
+      const cards = page.locator('[data-home-games="static"] a[data-search-id]')
+      await expect(cards).toHaveCount(12)
+      const paths = await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+      expect(new Set(paths).size).toBe(12)
+      expect(paths.every((path) => path?.startsWith(localePrefix + '/games/') && ordinary.has(Number(path.split('/').at(-1))))).toBe(true)
+    }
+    await page.goto('/site/105')
     await expect(page.getByRole('heading', { level: 1 })).toContainText('WildDream')
     await expect(page.getByRole('heading', { name: 'About this website' })).toBeVisible()
-    await page.goto('http://127.0.0.1:8787/updates/' + lastRelease)
+    await page.goto('/updates/' + lastRelease)
     await expect(page.locator('main article')).toContainText('Game Collections')
   } finally {
     await context.close()
   }
 })
 
-for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 1, 3], [375, 1, 2], [320, 1, 1]]) {
+test('home game rotation stays stable within a visit and draws from the selected mode', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  page.on('console', (message) => {
+    if (message.type() === 'error' && /hydrat|server.rendered/i.test(message.text())) errors.push(message.text())
+  })
+  const requests: string[] = []
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname))
+  const ordinary = new Set(catalog.games.filter(({ rating }) => rating === 'sfw').map(({ id }) => id))
+  const complete = new Set(catalog.games.map(({ id }) => id))
+  const grid = page.locator('[data-home-games]')
+  const selected = () => grid.locator('a[data-search-id]').evaluateAll((links) =>
+    links.map((link) => Number(link.getAttribute('data-search-id'))))
+
+  await page.goto('/')
+  await expect(grid).toHaveAttribute('data-home-games', 'sfw')
+  const first = await selected()
+  expect(first).toHaveLength(12)
+  expect(new Set(first).size).toBe(12)
+  expect(first.every((id) => ordinary.has(id))).toBe(true)
+  expect(requests.filter((path) => path.startsWith('/indexes/'))).toEqual(['/indexes/home-games.json'])
+
+  await page.evaluate(() => scrollTo(0, 750))
+  await page.getByRole('button', { name: 'Toggle light or dark theme' }).click()
+  await page.getByRole('searchbox').fill('WildDream')
+  await expect(grid).toHaveCount(0)
+  await page.getByRole('button', { name: 'Clear search' }).click()
+  expect(await selected()).toEqual(first)
+
+  const mode = page.getByRole('switch', { name: 'NSFW content' })
+  const adultPosition = catalog.games.findIndex(({ rating }) => rating === 'nsfw')
+  await page.evaluate((choice) => { Math.random = () => choice }, (adultPosition + .5) / catalog.games.length)
+  await mode.click()
+  await expect(grid).toHaveAttribute('data-home-games', 'nsfw')
+  const expanded = await selected()
+  expect(expanded).toHaveLength(12)
+  expect(new Set(expanded).size).toBe(12)
+  expect(expanded.every((id) => complete.has(id))).toBe(true)
+  expect(expanded[0]).toBe(catalog.games[adultPosition].id)
+  await expect(grid.locator('a[data-search-id]').first()).toContainText('NSFW')
+  expect(requests).toContain('/indexes/extended/home-directory.json')
+  expect(requests).not.toContain('/indexes/extended/directory.json')
+  await mode.click()
+  await expect(grid).toHaveAttribute('data-home-games', 'sfw')
+  expect(await selected()).toEqual(first)
+
+  await page.getByRole('link', { name: '中文', exact: true }).click()
+  await expect(page).toHaveURL('/zh')
+  await expect(page.getByRole('heading', { name: '兽游发现' })).toBeVisible()
+  await expect(grid).toHaveAttribute('data-home-games', 'sfw')
+  expect(await selected()).toEqual(first)
+  const localizedMode = page.getByRole('switch', { name: 'NSFW 内容' })
+  await localizedMode.click()
+  await expect(grid).toHaveAttribute('data-home-games', 'nsfw')
+  expect(await selected()).toEqual(expanded)
+  await localizedMode.click()
+  await page.reload()
+  await expect(grid).toHaveAttribute('data-home-games', 'sfw')
+  const afterReload = await selected()
+  expect(new Set(afterReload).size).toBe(12)
+  expect(afterReload).not.toEqual(first)
+  expect(afterReload.every((id) => ordinary.has(id))).toBe(true)
+  expect(errors).toEqual([])
+})
+
+for (const [width, cardColumns, entryColumns, gameColumns] of [[1440, 4, 1, 4], [820, 1, 3, 3], [680, 1, 3, 2], [375, 1, 2, 1], [320, 1, 1, 1]]) {
   test('responsive layouts at ' + width + 'px', async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.route('https://**/*.jpg', (route) => route.abort())
@@ -435,6 +513,12 @@ for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 1, 3], [37
         const list = grid.locator('[data-category-scroll]').first()
         expect(await list.locator('ol').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(entryColumns)
         expect(await list.evaluate((node) => node.scrollWidth - node.clientWidth)).toBe(0)
+        const homeGames = page.locator('[data-home-games]')
+        await expect(homeGames.locator('a[data-search-id]')).toHaveCount(12)
+        expect(await homeGames.evaluate((node) => {
+          const { gridTemplateColumns, gridTemplateRows } = getComputedStyle(node)
+          return [gridTemplateColumns.split(' ').length, gridTemplateRows.split(' ').length]
+        })).toEqual([gameColumns, 12 / gameColumns])
 
         const localePrefix = path === '/zh' ? '/zh' : ''
         const gameNavigation = page.getByRole('navigation', { name: /Discover games|兽游发现/ })

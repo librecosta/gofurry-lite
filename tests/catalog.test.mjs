@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
+import { homeGameCount, sampleHomeGames } from '../src/lib/home-games.ts'
 
 const read = (path) => JSON.parse(readFileSync(new URL('../' + path, import.meta.url)))
 const catalog = read('content/catalog/catalog.json')
@@ -65,5 +66,34 @@ test('collections preserve all 524 relationships and default membership is filte
   for (const full of complete.collections) {
     assert.deepEqual(ordinary.collections.find(({ id }) => id === full.id).members,
       full.members.filter((id) => games.has(id)))
+  }
+})
+
+test('homepage game pools contain only card data for their respective content modes', () => {
+  const home = read('src/generated/home.json')
+  const sfw = read('public/indexes/home-games.json')
+  const nsfw = read('public/indexes/extended/home-directory.json')
+  assert.equal(sfw.length, 203)
+  assert.equal(nsfw.games.length, 261)
+  assert.deepEqual(nsfw.sites, complete.sites)
+  assert.deepEqual(home.sites, ordinary.sites)
+  assert.equal(home.games.length, homeGameCount)
+  assert.equal(new Set(home.games.map(({ id }) => id)).size, homeGameCount)
+  assert(home.games.every((game) => sfw.some(({ id }) => id === game.id)))
+
+  for (const [pool, source] of [[sfw, ordinary.games], [nsfw.games, complete.games]]) {
+    assert.deepEqual(pool.map(({ id }) => id), source.map(({ id }) => id))
+    for (const [index, { labels, ...game }] of pool.entries()) {
+      const { id, title, rating, appId, cover, tags } = source[index]
+      assert.deepEqual(game, { id, title, rating, appId, ...(cover ? { cover } : {}) })
+      assert.deepEqual(labels, tags.flatMap(({ id }) => {
+        const tag = catalog.tags.find((tag) => tag.id === id && tag.category === 'classification')
+        return tag ? [{ id, title: tag.title }] : []
+      }).slice(0, 3))
+    }
+    const sample = sampleHomeGames(Object.freeze(pool))
+    assert.equal(sample.length, homeGameCount)
+    assert.equal(new Set(sample.map(({ id }) => id)).size, homeGameCount)
+    assert(sample.every((game) => pool.includes(game)))
   }
 })

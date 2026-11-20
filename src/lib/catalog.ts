@@ -52,14 +52,8 @@ export function initialDetail(view: View): Site | Game | undefined {
 const directory = ordinary as Directory
 
 export function initialDirectory(view: View): Directory {
-  const result: Directory = { sites: [], games: [], groups: [], collections: [], tags: [], featuredGames: [] }
+  const result: Directory = { sites: [], games: [], groups: [], collections: [], tags: [] }
   switch (view.type) {
-    case 'home':
-      result.sites = directory.sites
-      result.games = directory.games.filter((game) => directory.featuredGames.slice(0, 4).includes(game.id))
-      result.tags = directory.tags
-      result.featuredGames = directory.featuredGames
-      break
     case 'category':
       result.sites = directory.sites.filter((site) => inCategory(site, view.code))
       break

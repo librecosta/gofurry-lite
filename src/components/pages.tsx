@@ -4,9 +4,11 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { categories } from '../lib/categories'
 import { catalog, gameById, initialDetail, initialDirectory, siteById } from '../lib/catalog'
+import type { HomeDirectory } from '../lib/home-games'
 import { href, labels, localized, type Locale, type Update, type View } from '../lib/presentation'
 import { origin } from '../lib/routes'
-import { CatalogView } from './catalog-views'
+import home from '../generated/home.json'
+import { CatalogView, HomeView } from './catalog-views'
 import { Breadcrumb, More, Title, t } from './elements'
 import { Icon } from './icons'
 import styles from './site.module.scss'
@@ -78,7 +80,7 @@ function Info({ locale, page }: { locale: Locale; page: keyof typeof statements 
 
 export function SitePage({ locale, segments }: { locale: Locale; segments: string[] }) {
   const [section, key, slug] = segments
-  if (segments.length === 0) return <CatalogRoute locale={locale} view={{ type: 'home' }} />
+  if (segments.length === 0) return <HomeView locale={locale} initial={home as HomeDirectory} />
   if (section === 'status') {
     const gone = key === 'gone'
     return <article className={styles.readingPanel}>

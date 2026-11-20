@@ -17,10 +17,10 @@ export type Tag = { id: number; code: string; category: string; title: Translati
 export type Collection = Copy & { id: number; code: string; members: number[] }
 export type Update = Copy & { id: number; date: string; version: string; commit: string; body: Translation }
 export type Directory = {
-  sites: DirectorySite[]; games: GameCardData[]; groups: Group[]; collections: Collection[]; tags: Tag[]; featuredGames: number[]
+  sites: DirectorySite[]; games: GameCardData[]; groups: Group[]; collections: Collection[]; tags: Tag[]
 }
 export type View =
-  | { type: 'home' | 'groups' | 'games' | 'collections' }
+  | { type: 'groups' | 'games' | 'collections' }
   | { type: 'category'; code: CategoryCode }
   | { type: 'group' | 'site' | 'game'; id: number }
   | { type: 'collection'; code: string }

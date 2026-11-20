@@ -56,8 +56,10 @@ function setMode(mode: Rating) {
   for (const update of subscribers) update()
 }
 
-export function useContentMode() {
-  return useSyncExternalStore(subscribe, currentMode, () => 'sfw' as const)
+export function useContentMode(): Rating
+export function useContentMode(initial: null): Rating | null
+export function useContentMode(initial: Rating | null = 'sfw') {
+  return useSyncExternalStore(subscribe, currentMode, () => initial)
 }
 
 export function toggleContentMode() {

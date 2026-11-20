@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react'
 
 const requests = new Map<string, Promise<unknown>>()
 
-function readJson(url: string) {
+export function readStaticData<T>(url: string) {
   const saved = requests.get(url)
-  if (saved) return saved
+  if (saved) return saved as Promise<T>
   const request = fetch(url).then((response) => {
     if (!response.ok) throw new Error('Could not load catalogue data')
-    return response.json() as Promise<unknown>
+    return response.json() as Promise<T>
   }).catch((error: unknown) => {
     requests.delete(url)
     throw error
@@ -24,8 +24,8 @@ export function useStaticData<T>(url: string | null) {
   useEffect(() => {
     if (!url) return
     let current = true
-    readJson(url).then(
-      (value) => { if (current) setResult({ url, value: value as T }) },
+    readStaticData<T>(url).then(
+      (value) => { if (current) setResult({ url, value }) },
       () => { if (current) setResult({ url, failed: true }) },
     )
     return () => { current = false }

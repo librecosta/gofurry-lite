@@ -1,6 +1,7 @@
 import { opendir, readFile, stat } from 'node:fs/promises'
 import assert from 'node:assert/strict'
 import { resolve, sep } from 'node:path'
+import { homeGameCount } from '../src/lib/home-games.ts'
 
 const read = (name) => readFile(new URL('../' + name, import.meta.url), 'utf8')
 const manifest = JSON.parse(await read('src/generated/worker.json'))
@@ -25,6 +26,11 @@ for (const path of expected) {
   assert(html.includes('https://go-furry.com/media/brand/gofurry-lite-og.png'), path)
   assert(html.includes('name="twitter:card" content="summary_large_image"'), path)
   assert.equal(html.includes('name="robots" content="noindex, nofollow"'), restricted.has(path), path)
+  if (localPath === '/') {
+    const links = [...html.matchAll(/href="((?:\/zh)?\/games\/\d+)"/g)].map(([, href]) => href)
+    assert.equal(links.length, homeGameCount, path)
+    assert.equal(new Set(links).size, homeGameCount, path)
+  }
   if (localPath === '/' || /^(?:\/categories\/|\/site-groups(?:\/|$)|\/games(?:$|\/collections(?:\/|$)))/.test(localPath)) {
     for (const [, link] of html.matchAll(/href="((?:\/zh)?\/(?:site|games)\/\d+)"/g)) {
       assert(!restricted.has(link), path + ' lists ' + link)
