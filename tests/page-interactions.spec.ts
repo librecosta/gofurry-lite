@@ -54,26 +54,39 @@ for (const width of [1440, 390]) {
   })
 }
 
-test('desktop content switch slides a solid knob and restores the checked radio on reload', async ({ page }) => {
+test('desktop content switch keeps the mode label opposite the knob inside the capsule', async ({ page }) => {
   await page.route(/steamstatic\.com/, (route) => route.abort())
   await page.goto('/en/about')
-  const group = page.getByRole('group', { name: 'Content display mode' })
-  const sfw = group.getByRole('radio', { name: 'SFW', exact: true })
-  const nsfw = group.getByRole('radio', { name: 'NSFW', exact: true })
-  const track = group.locator(':scope > span[aria-hidden]')
-  const knob = track.locator('span')
+  const mode = page.getByRole('switch', { name: 'NSFW content' })
+  const track = mode.locator(':scope > span[aria-hidden]')
+  const knob = track.locator('span:last-child')
+  const sfw = track.getByText('SFW', { exact: true })
+  const nsfw = track.getByText('NSFW', { exact: true })
   const start = (await knob.boundingBox())!.x
   await expect(track).toHaveCSS('border-top-width', '2px')
   const initialInk = await track.evaluate((element) => getComputedStyle(element).borderColor)
-  await expect(sfw).toBeChecked()
-  await sfw.focus()
-  await sfw.press('ArrowRight')
-  await expect(nsfw).toBeChecked()
-  await expect(nsfw).toBeFocused()
-  await expect.poll(async () => (await knob.boundingBox())!.x).toBeCloseTo(start + 20, 0)
+  await expect(mode).toHaveAttribute('aria-checked', 'false')
+  await expect(sfw).toHaveCSS('opacity', '1')
+  await expect(nsfw).toHaveCSS('opacity', '0')
+  const sfwBox = (await sfw.boundingBox())!
+  const capsule = (await track.boundingBox())!
+  expect(sfwBox.x).toBeGreaterThan(start + (await knob.boundingBox())!.width)
+  expect(sfwBox.x + sfwBox.width).toBeLessThan(capsule.x + capsule.width)
+  await mode.focus()
+  await mode.press('ArrowRight')
+  await expect(mode).toHaveAttribute('aria-checked', 'true')
+  await expect(mode).toBeFocused()
+  await expect.poll(async () => (await knob.boundingBox())!.x).toBeCloseTo(start + 48, 0)
+  await expect(sfw).toHaveCSS('opacity', '0')
+  await expect(nsfw).toHaveCSS('opacity', '1')
+  const nsfwBox = (await nsfw.boundingBox())!
+  expect(nsfwBox.x).toBeGreaterThan(capsule.x)
+  expect(nsfwBox.x + nsfwBox.width).toBeLessThan((await knob.boundingBox())!.x)
   await expect.poll(() => track.evaluate((element) => getComputedStyle(element).borderColor)).not.toBe(initialInk)
   await page.reload()
-  await expect(nsfw).toBeChecked()
+  await expect(mode).toHaveAttribute('aria-checked', 'true')
+  await mode.press('Space')
+  await expect(mode).toHaveAttribute('aria-checked', 'false')
 })
 
 test('scroll gauge follows document scrolling, seeks by track, drags, and handles keyboard and resize', async ({ page }) => {

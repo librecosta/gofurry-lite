@@ -12,9 +12,8 @@ import { revealTheme } from './theme-reveal'
 import styles from './navigation.module.scss'
 
 const dockId = 'mobile-navigation'
-const defaultInk = { '--nav-emphasis': 0 } as Target
-const hoverInk = { '--nav-emphasis': .56 } as Target
-const accentInk = { '--nav-emphasis': 1 } as Target
+const hoverInk = { '--nav-hover': 1 } as Target
+const hoverTheme = { ...hoverInk, '--nav-button-fill': 1 } as Target
 const destinations = [
   { key: 'discover', path: '/', icon: 'discover', zh: '导航', en: 'Discover' },
   { key: 'games', path: '/games', icon: 'game', zh: '游戏', en: 'Games' },
@@ -190,13 +189,12 @@ export function SiteNavigation({ locale, path }: { locale: Locale; path: string 
           {destinations.map((item) => {
             const current = currentLocation(item.path, path)
             return <motion.a key={item.key} className={styles.headerAction} href={href(locale, item.path)}
-              aria-current={current} initial={false} animate={current ? accentInk : defaultInk}
-              whileHover={current ? accentInk : hoverInk} whileFocus={current ? accentInk : hoverInk}
+              aria-current={current} initial={false} whileHover={hoverInk} whileFocus={hoverInk}
               transition={transition}>{item[locale]}</motion.a>
           })}
-          <motion.button className={styles.headerAction} type="button" aria-pressed={dark} disabled={!ready}
+          <motion.button className={styles.headerAction + ' ' + styles.themeAction} type="button" aria-pressed={dark} disabled={!ready}
             aria-label={zh ? '切换亮暗主题' : 'Toggle light or dark theme'} onClick={(event) => revealTheme(event.currentTarget, toggleTheme)}
-            initial={false} whileHover={hoverInk} whileFocus={hoverInk} transition={transition}>
+            initial={false} whileHover={hoverTheme} whileFocus={hoverTheme} transition={transition}>
             <Icon name={dark ? 'sun' : 'moon'} />
           </motion.button>
           <motion.a className={styles.headerAction} href={languageUrl} lang={zh ? 'en' : 'zh-CN'}
@@ -204,8 +202,7 @@ export function SiteNavigation({ locale, path }: { locale: Locale; path: string 
         </nav>
         <motion.button ref={trigger} type="button" className={styles.menuTrigger} aria-controls={visible ? dockId : undefined} disabled={!ready}
           aria-label={zh ? '导航菜单' : 'Navigation menu'} aria-expanded={visible} onClick={() => setOpened(!opened)}
-          initial={false} animate={visible ? accentInk : defaultInk}
-          whileHover={visible ? accentInk : hoverInk} whileFocus={visible ? accentInk : hoverInk} transition={transition}>
+          initial={false} whileHover={hoverInk} whileFocus={hoverInk} transition={transition}>
           <Icon name={visible ? 'close' : 'menu'} size={22} />
         </motion.button>
       </div>

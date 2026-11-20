@@ -24,22 +24,23 @@
 
 .wordmark {
   display: inline-flex;
-  align-items: flex-start;
+  align-items: flex-end;
   flex: none;
-  gap: 2px;
+  gap: 3px;
   white-space: nowrap;
 
   small {
-    margin-block-start: .28em;
+    /* Align with the artwork's text baseline above the y descender. */
+    margin-block-end: 8px;
     color: var(--brand);
-    font-size: clamp(.61rem, 1.15vw, .76rem);
+    font-size: .95rem;
     font-weight: 800;
     line-height: 1;
   }
 }
 
 .wordmarkArtwork {
-  width: clamp(84px, 15vw, 138px);
+  width: 138px;
   aspect-ratio: 4;
 
   /* The transparent gap in the artwork falls between its symbol and wordmark. */
@@ -55,14 +56,15 @@
 
 .headerAction,
 .menuTrigger {
-  --nav-emphasis: 0;
+  --nav-hover: 0;
+  --nav-ink: var(--muted);
 
   display: inline-grid;
   place-items: center;
   min-width: 38px;
   min-height: 40px;
   padding-inline: 9px;
-  color: color-mix(in srgb, var(--brand) calc(var(--nav-emphasis) * 100%), var(--muted));
+  color: color-mix(in srgb, var(--nav-hover-ink) calc(var(--nav-hover) * 100%), var(--nav-ink));
   border: 0;
   border-radius: var(--r-sm);
   background: transparent;
@@ -70,62 +72,72 @@
   font-weight: 720;
   white-space: nowrap;
 
+  &[aria-current], &[aria-expanded="true"] { --nav-ink: var(--brand); }
   &:disabled { cursor: default; }
 }
 
+.themeAction {
+  --nav-button-fill: 0;
+
+  background-color: color-mix(in srgb, var(--nav-button-hover) calc(var(--nav-button-fill) * 100%), transparent);
+}
+
 .modeSwitch {
-  position: relative;
+  --mode-width: 74px;
+  --mode-border: 2px;
+  --mode-inset: 3px;
+  --mode-thumb-size: 16px;
+  --mode-travel: calc(var(--mode-width) - 2 * var(--mode-border) - 2 * var(--mode-inset) - var(--mode-thumb-size));
+
   display: inline-grid;
   flex: none;
-  grid-template-columns: repeat(2, 1fr);
-  min-inline-size: 0;
+  width: var(--mode-width);
+  min-height: 40px;
   margin: 0 4px 0 0;
   padding: 0;
-  color: var(--muted);
+  color: var(--text);
   border: 0;
-  font-size: .69rem;
-  font-weight: 800;
+  border-radius: var(--r-md);
+  background: transparent;
+  place-items: center;
 
-  label {
-    position: relative;
-    cursor: pointer;
-  }
-
-  label span {
-    display: grid;
-    min-block-size: 38px;
-    padding-inline: 4px 26px;
-    border-radius: var(--r-sm);
-    place-items: center;
-  }
-
-  label:last-child span { padding-inline: 26px 4px; }
-  &:disabled label { cursor: default; }
-
-  input:focus-visible + span {
-    outline: 2px solid var(--focus);
-    outline-offset: -1px;
-  }
+  &:disabled { cursor: default; }
 }
 
 .modeTrack {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: 40px;
-  height: 20px;
-  border: 2px solid var(--mode-off);
+  position: relative;
+  width: 100%;
+  height: 26px;
+  border: var(--mode-border) solid var(--mode-off);
   border-radius: 99px;
-  translate: -50% -50%;
   pointer-events: none;
+}
+
+.modeLabel {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--mode-inset);
+  display: grid;
+  width: 50%;
+  font-size: .72rem;
+  font-weight: 800;
+  place-items: center;
+
+  &[data-mode-label="nsfw"] {
+    inset-inline: var(--mode-inset) auto;
+    color: var(--mode-on);
+  }
 }
 
 .modeThumb {
   position: absolute;
-  inset: 2px auto auto 2px;
-  width: 12px;
-  height: 12px;
+  inset: 50% auto auto var(--mode-inset);
+  width: var(--mode-thumb-size);
+  height: var(--mode-thumb-size);
   border-radius: 50%;
   background: var(--mode-off);
+  transform: translateX(calc(var(--mode-travel) * var(--mode-thumb-position, 0)));
+  translate: 0 -50%;
 }
 
 .menuTrigger,
@@ -139,7 +151,6 @@
     padding-block-start: env(safe-area-inset-top, 0);
   }
 
-  .headerInner { min-height: 56px; }
   .desktopNav { display: none; }
   .menuTrigger { display: inline-grid; }
 
