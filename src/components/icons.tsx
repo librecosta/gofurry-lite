@@ -3,6 +3,7 @@ import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr/ArrowSquareOu
 import { BookOpenIcon } from '@phosphor-icons/react/dist/ssr/BookOpen'
 import { CalendarDotsIcon } from '@phosphor-icons/react/dist/ssr/CalendarDots'
 import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr/CaretRight'
+import { CheckIcon } from '@phosphor-icons/react/dist/ssr/Check'
 import { CompassIcon } from '@phosphor-icons/react/dist/ssr/Compass'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/ssr/EnvelopeSimple'
 import { GameControllerIcon } from '@phosphor-icons/react/dist/ssr/GameController'
@@ -38,6 +39,7 @@ const glyphs = {
   external: ArrowSquareOutIcon,
   arrow: ArrowRightIcon,
   chevron: CaretRightIcon,
+  check: CheckIcon,
   globe: GlobeIcon,
   sun: SunIcon,
   moon: MoonIcon,

@@ -188,7 +188,7 @@ test('all homepage category members render with mode-specific counts and separat
       const card = page.locator('[data-category="' + code + '"]')
       await expect(card.locator('[data-site-id]')).toHaveCount(members.length)
       const actual = await card.locator('[data-site-id]').evaluateAll((rows) => rows.map((row) => Number(row.getAttribute('data-site-id'))))
-      expect(actual.sort((a, b) => a - b), code).toEqual(members.map(({ id }) => id).sort((a, b) => a - b))
+      expect(actual, code).toEqual(members.map(({ id }) => id).sort((a, b) => a - b))
       await expect(card.getByRole('link', { name: 'SEE ALL ' + members.length + ' SITES', exact: true })).toHaveAttribute('href', '/categories/' + code)
     }
   }
@@ -211,6 +211,74 @@ test('all homepage category members render with mode-specific counts and separat
   const y = await page.evaluate(() => scrollY)
   await page.mouse.wheel(0, 150)
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(y)
+})
+
+test('homepage tall cards follow the desktop sketch and share one height in the single-column layout', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  await page.goto('/')
+  const boxes = () => page.locator('[data-category]').evaluateAll((cards) => Object.fromEntries(
+    cards.map((card) => {
+      const { x, y, width, height } = card.getBoundingClientRect()
+      return [card.getAttribute('data-category')!, { x, y, width, height }] as const
+    }),
+  ))
+  const { community, gallery, marketplace, literature, resources, events, knowledge, gaming } = await boxes()
+  const gap = gallery.x - (community.x + community.width)
+  expect(gap).toBeGreaterThan(0)
+  expect(gallery.y).toBe(community.y)
+  expect(community.width).toBeCloseTo(marketplace.width + literature.width + gap, 1)
+  expect(gallery.width).toBeCloseTo(resources.width + events.width + gap, 1)
+  expect([literature.y, resources.y, events.y]).toEqual([marketplace.y, marketplace.y, marketplace.y])
+  expect([knowledge.x, gaming.x]).toEqual([literature.x, resources.x])
+  expect(knowledge.y).toBeCloseTo(literature.y + literature.height + gap, 1)
+  expect(gaming.y).toBeCloseTo(resources.y + resources.height + gap, 1)
+  expect(marketplace.y + marketplace.height).toBeCloseTo(knowledge.y + knowledge.height, 1)
+  expect(events.y + events.height).toBeCloseTo(gaming.y + gaming.height, 1)
+  expect(community.height).toBeGreaterThan(304)
+  expect(literature.height).toBeGreaterThan(304)
+
+  for (const width of [960, 375, 320]) {
+    await page.setViewportSize({ width, height: 850 })
+    const cards = Object.values(await boxes())
+    expect(new Set(cards.map(({ x, height, width }) => [x, height, width].join('/'))).size).toBe(1)
+    expect(cards[0].height).toBeGreaterThan(304)
+    expect(cards.every(({ y }, index) => index === 0 || y > cards[index - 1].y)).toBe(true)
+  }
+})
+
+test('homepage records visits from detail links and external links without reordering sites', async ({ page, context }) => {
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  await page.goto('/')
+  const community = page.locator('[data-category="community"]')
+  const sortedIds = () => community.locator('[data-site-id]').evaluateAll((rows) => rows.map((row) => row.getAttribute('data-site-id')))
+  const originalOrder = await sortedIds()
+  const first = community.locator('[data-site-id]').first()
+  const firstLink = first.locator('a').first()
+  const detail = (await firstLink.getAttribute('href'))!
+  await expect(first.getByText('1.', { exact: true })).toBeVisible()
+  await firstLink.press('Enter')
+  await expect(page).toHaveURL(detail)
+
+  await page.goto('/zh')
+  await expect(first.getByTitle('已访问', { exact: true })).toBeVisible()
+  expect(await sortedIds()).toEqual(originalOrder)
+  await page.getByRole('switch', { name: 'NSFW 内容' }).click()
+  const allCommunity = catalog.sites.filter(({ id }) =>
+    classifications[id].primary === 'community' || classifications[id].secondary.includes('community'))
+  await expect(community.locator('[data-site-id]')).toHaveCount(allCommunity.length)
+  await expect(first.getByTitle('已访问', { exact: true })).toBeVisible()
+  expect((await sortedIds()).filter((id) => originalOrder.includes(id))).toEqual(originalOrder)
+
+  const row = page.locator('[data-site-id="105"]').first()
+  const external = row.locator('a[target="_blank"]')
+  const address = (await external.getAttribute('href'))!
+  await context.route(address, (route) => route.fulfill({ body: 'External destination' }))
+  const [popup] = await Promise.all([page.waitForEvent('popup'), external.click()])
+  await expect(row.getByTitle('已访问', { exact: true })).toBeVisible()
+  await popup.close()
+  await page.reload()
+  await expect(row.getByTitle('已访问', { exact: true })).toBeVisible()
 })
 
 test('category dividers expand from the center and category accents stay distinct in both themes', async ({ page }) => {
@@ -292,7 +360,7 @@ test('static pages readable without JavaScript', async ({ browser }) => {
   }
 })
 
-for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 2, 2], [375, 1, 3], [320, 1, 2]]) {
+for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 1, 3], [375, 1, 2], [320, 1, 1]]) {
   test('responsive layouts at ' + width + 'px', async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.route('https://**/*.jpg', (route) => route.abort())
@@ -306,7 +374,7 @@ for (const [width, cardColumns, entryColumns] of [[1440, 4, 1], [820, 2, 2], [37
         await expect(grid.locator('[data-category]').first()).toHaveCSS('border-top-width', '3px')
         expect(await grid.evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(cardColumns)
         const list = grid.locator('[data-category-scroll]').first()
-        expect(await list.locator('ul').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(entryColumns)
+        expect(await list.locator('ol').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(entryColumns)
         expect(await list.evaluate((node) => node.scrollWidth - node.clientWidth)).toBe(0)
 
         const shortcuts = (await page.getByRole('navigation', { name: /Projects and contact|项目与联系方式/ }).boundingBox())!

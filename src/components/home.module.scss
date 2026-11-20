@@ -189,7 +189,7 @@
 
 .categoryGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -250,7 +250,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 7px;
-  height: 304px;
+  height: 412px;
   min-width: 0;
   padding: 9px;
   border: 3px solid var(--category-line);
@@ -323,7 +323,7 @@
 
   &:focus-visible { outline-offset: 0; }
 
-  ul {
+  ol {
     display: grid;
     grid-template-columns: repeat(var(--entry-columns, 1), minmax(0, 1fr));
     gap: 1px 4px;
@@ -342,6 +342,19 @@
 
   &:is(:hover, :focus-within) { background: var(--category-fill); }
   a:focus-visible { outline-offset: -2px; }
+}
+
+.categoryPosition {
+  display: flex;
+  flex: 0 0 22px;
+  align-items: center;
+  justify-content: flex-end;
+  padding-inline-end: 3px;
+  color: var(--muted);
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+
+  svg { color: var(--category-ink); }
 }
 
 .categoryDetail {
@@ -406,9 +419,31 @@
   }
 }
 
-@media (width < 1050px) {
-  .categoryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (width >= 1050px) {
+  .categoryGrid {
+    grid-template:
+      'community community gallery gallery' 364px
+      'marketplace literature resources events' 410px
+      'marketplace knowledge gaming events' 410px / minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .categoryCard { height: auto; }
+  .community { grid-area: community; }
+  .gallery { grid-area: gallery; }
+  .marketplace { grid-area: marketplace; }
+  .literature { grid-area: literature; }
+  .resources { grid-area: resources; }
+  .events { grid-area: events; }
+  .knowledge { grid-area: knowledge; }
+  .gaming { grid-area: gaming; }
+}
+
+@media (360px <= width < 640px) {
   .categoryScroll { --entry-columns: 2; }
+}
+
+@media (640px <= width < 1050px) {
+  .categoryScroll { --entry-columns: 3; }
 }
 
 @media (768px <= width < 1050px) {
@@ -417,12 +452,6 @@
 
 @media (width < 768px) {
   .leadActions { grid-template-columns: minmax(0, 1fr); }
-  .categoryGrid { grid-template-columns: minmax(0, 1fr); }
-  .categoryCard { height: 236px; }
-}
-
-@media (360px <= width < 768px) {
-  .categoryScroll { --entry-columns: 3; }
 }
 
 @media (width < 440px) {
