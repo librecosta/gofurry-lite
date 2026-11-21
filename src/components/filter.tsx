@@ -25,9 +25,10 @@ export function Filter({ entries, group = [], locale, kind, expanded, searchLayo
   const [query, setQuery] = useState('')
   const composing = useRef(false)
   const [tags, setTags] = useState<number[]>([])
-  const selected = group.map(({ options }, i) => options.some(({ id }) => id === tags[i]) ? tags[i] : 0)
+  const available = new Set(group.flatMap(({ options }) => options.map(({ id }) => id)))
+  const selected = tags.filter((id) => available.has(id))
   const words = normalize(query).split(/\s+/).filter(Boolean)
-  const active = Boolean(words.length || selected.some(Boolean))
+  const active = Boolean(words.length || selected.length)
   const indexUrl = '/indexes/' + (expanded ? 'extended/' : '') + kind + '-' + locale + '.json'
   const source = useStaticData<Row[]>(active ? indexUrl : null)
   const rows = source?.value
@@ -39,7 +40,7 @@ export function Filter({ entries, group = [], locale, kind, expanded, searchLayo
   const results = active
     ? entries.filter(({ id }) => {
       const row = index?.get(id)
-      return row && words.every((word) => row[1].includes(word)) && selected.every((tag) => !tag || row.slice(2).includes(tag))
+      return row && words.every((word) => row[1].includes(word)) && selected.every((tag) => row.includes(tag, 2))
     })
     : entries
 

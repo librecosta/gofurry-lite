@@ -1,9 +1,9 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { categories, type CategoryCode } from '../lib/categories'
 import { gameCardLabels, type HomeDirectory, type HomeGame } from '../lib/home-games'
-import { href, inCategory, labels, localized, ordered, steamCover, steamStore } from '../lib/presentation'
+import { gameCover, href, inCategory, labels, localized, ordered, steamStore } from '../lib/presentation'
 import type { Collection, Directory, Game, GameCardData, Locale, Site, Tag, View } from '../lib/presentation'
 import { Breadcrumb, More, Section, TextLink, Title, t } from './elements'
 import { Filter } from './filter'
@@ -26,28 +26,25 @@ function RatingBadge({ rating }: { rating: Site['rating'] }) {
   return rating === 'nsfw' ? <span className={styles.ratingBadge}>NSFW</span> : null
 }
 
-function DirectoryCard({ to, title, description, media, siteId }: {
-  to: string; title: ReactNode; description?: ReactNode; media?: ReactNode; siteId?: number
+function DirectoryCard({ to, title, description, media, siteId, compact = false }: {
+  to: string; title: ReactNode; description?: ReactNode; media?: ReactNode; siteId?: number; compact?: boolean
 }) {
-  return <a href={to} className={styles.directoryCard} data-search-id={siteId}>
+  const className = compact ? styles.directoryCard + ' ' + styles.compact : styles.directoryCard
+  return <a href={to} className={className} data-search-id={compact ? undefined : siteId}>
     {media}
     <span className={styles.directoryCopy}>
       <strong>{title}</strong>
       {description && <span>{description}</span>}
     </span>
-    <span className={styles.rowArrow}><Icon name="chevron" size={15} /></span>
+    {!compact && <span className={styles.rowArrow}><Icon name="chevron" size={15} /></span>}
   </a>
 }
 
-function SiteRow({ site, locale }: { site: Site; locale: Locale }) {
-  return <DirectoryCard to={href(locale, '/site/' + site.id)} siteId={site.id}
+function SiteRow({ site, locale, compact = false }: { site: Site; locale: Locale; compact?: boolean }) {
+  return <DirectoryCard to={href(locale, '/site/' + site.id)} siteId={site.id} compact={compact}
     title={<>{localized(site.title, locale)}<RatingBadge rating={site.rating} /></>}
-    description={localized(site.description, locale)}
-    media={<Media kind="logo" src={site.logo} />} />
-}
-
-function gameCover(game: Pick<GameCardData, 'appId' | 'cover'>) {
-  return game.cover || steamCover(game.appId)
+    description={!compact && localized(site.description, locale)}
+    media={<Media kind="logo" src={site.logo} eager={compact} />} />
 }
 
 function GameCard({ game, locale, tags = [] }: { game: GameCardData | HomeGame; locale: Locale; tags?: Tag[] }) {
@@ -72,15 +69,41 @@ function GameCard({ game, locale, tags = [] }: { game: GameCardData | HomeGame; 
   </div>
 }
 
-function CollectionCard({ item, locale, games }: { item: Collection; locale: Locale; games: GameCardData[] }) {
-  const coverGame = games.find(({ id }) => id === item.members[0])
+function CollectionCard({ item, locale, cover }: { item: Collection; locale: Locale; cover?: string }) {
   return <a href={href(locale, '/games/collections/' + item.code)} className={styles.collectionCard}>
-    <Media src={coverGame && gameCover(coverGame)} />
+    <Media src={cover} />
     <div className={styles.collectionCaption}>
-      <div><Icon name="layers" size={18} /><strong>{localized(item.title, locale)}</strong></div>
+      <strong>{localized(item.title, locale)}</strong>
       <small>{item.members.length} {t(locale, '款游戏', item.members.length === 1 ? 'game' : 'games')}</small>
     </div>
   </a>
+}
+
+function useCollectionCoverRolls(count: number) {
+  const [rolls, setRolls] = useState<number[]>()
+  useEffect(() => {
+    if (!count) return
+    const frame = requestAnimationFrame(() => setRolls(Array.from({ length: count }, () => Math.random())))
+    return () => cancelAnimationFrame(frame)
+  }, [count])
+  return rolls
+}
+
+function CollectionGrid({ items, directory, locale, rolls }: {
+  items: Collection[]; directory: Directory; locale: Locale; rolls?: number[]
+}) {
+  const covers = directory.collectionCovers ?? Object.fromEntries(directory.games.map((game) => [game.id, gameCover(game)]))
+  const used = new Set<string>()
+  return <div className={styles.collectionGrid}>
+    {items.map((item, i) => {
+      const pool = item.members.flatMap((id) => covers[id] ?? [])
+      const unused = pool.filter((cover) => !used.has(cover))
+      const choices = unused.length ? unused : pool
+      const cover = choices[Math.floor((rolls?.[i] ?? 0) * choices.length)]
+      if (cover) used.add(cover)
+      return <CollectionCard key={item.code} item={item} locale={locale} cover={cover} />
+    })}
+  </div>
 }
 
 export function HomeView({ locale, initial }: { locale: Locale; initial: HomeDirectory }) {
@@ -175,11 +198,7 @@ function SiteDetail({ site, locale, directory }: { site: Site } & ModeProps) {
           {description && <section><h2>{t(locale, '关于网站', 'About this website')}</h2><PlainBody value={description} /></section>}
           {suggestions.length > 0 && <section className={styles.related}>
             <h2>{t(locale, '相关网站', 'Related websites')}</h2>
-            <ul className={styles.relatedSites} role="list">
-              {suggestions.map((item) => <li key={item.id}>
-                <a href={href(locale, '/site/' + item.id)}>{localized(item.title, locale)}<RatingBadge rating={item.rating} /></a>
-              </li>)}
-            </ul>
+            {suggestions.map((item) => <SiteRow key={item.id} site={item} locale={locale} compact />)}
           </section>}
         </div>
         {(classification || groups.length > 0) && <aside className={styles.facts}>
@@ -199,21 +218,28 @@ function SiteDetail({ site, locale, directory }: { site: Site } & ModeProps) {
 }
 
 function gameKindFilters(locale: Locale, { games, tags }: Directory) {
+  const counts = new Map<number, number>()
+  for (const game of games) {
+    for (const id of new Set(game.tags.map((tag) => tag.id))) counts.set(id, (counts.get(id) ?? 0) + 1)
+  }
   return [
     { name: t(locale, '游戏分类', 'Game category'), key: 'classification' },
     { name: t(locale, '物种标签', 'Species'), key: 'species' },
+    { name: t(locale, '平台', 'Platform'), key: 'platform' },
+    { name: t(locale, '其他标签', 'Other tags'), key: 'other' },
   ].map(({ name, key }) => {
-    const used = new Set(games.flatMap(({ tags }) => tags.map(({ id }) => id)))
-    const options = tags.filter((tag) => tag.category === key && used.has(tag.id))
-      .map((tag) => ({ id: tag.id, label: localized(tag.title, locale) }))
-      .sort((first, last) => first.label.localeCompare(last.label, locale === 'zh' ? 'zh-CN' : 'en'))
-    return { name, options }
-  })
+    const options = tags.filter((tag) => tag.category === key && counts.has(tag.id))
+      .map((tag) => ({ id: tag.id, label: localized(tag.title, locale), count: counts.get(tag.id)! }))
+      .sort((first, last) => last.count - first.count || first.label.localeCompare(last.label, locale === 'zh' ? 'zh-CN' : 'en'))
+    return { key, name, options }
+  }).filter(({ options }) => options.length > 0)
 }
 
 function GameDirectory({ locale, directory, expanded }: ModeProps) {
   const { games, tags, collections } = directory
   const listed = ordered(games, locale)
+  const featured = collections.slice(0, 3)
+  const coverRolls = useCollectionCoverRolls(featured.length)
   return <>
     <Title title={t(locale, '探索兽游', 'Explore furry games')} icon="game"
       description={t(locale, '发现兽人主题的独立游戏与互动作品。', 'Discover furry-themed indie games and interactive works.')} />
@@ -222,21 +248,20 @@ function GameDirectory({ locale, directory, expanded }: ModeProps) {
       beforeResults={<>
         <Section title={t(locale, '精选合集', 'Featured collections')}
           more={<More to={href(locale, '/games/collections')}>{t(locale, '查看全部 16 个合集', 'View all 16 collections')}</More>}>
-          <div className={styles.collectionGrid}>
-            {collections.slice(0, 3).map((item) => <CollectionCard key={item.code} item={item} locale={locale} games={games} />)}
-          </div>
+          <CollectionGrid items={featured} directory={directory} locale={locale} rolls={coverRolls} />
         </Section>
-        <div className={styles.sectionHeading}><h2>{t(locale, '全部游戏', 'All games')}</h2><span>{listed.length} {t(locale, '款游戏', 'games')}</span></div>
+        <div className={styles.sectionHeading + ' ' + styles.allGamesHeading}><h2>{t(locale, '全部游戏', 'All games')}</h2><span>{listed.length} {t(locale, '款游戏', 'games')}</span></div>
       </>} />
   </>
 }
 
 function Collections({ locale, collection, directory }: { collection?: Collection } & ModeProps) {
   const { games, tags, collections } = directory
+  const coverRolls = useCollectionCoverRolls(collection ? 0 : collections.length)
   if (!collection) return <>
     <Breadcrumb locale={locale} title={labels[locale].collections} parent={['/games', labels[locale].games]} />
     <Title title={labels[locale].collections} icon="layers" description={t(locale, '按玩法或主题浏览历史游戏合集。', 'Browse the archived collections by genre or theme.')} />
-    <div className={styles.collectionGrid}>{collections.map((item) => <CollectionCard key={item.code} item={item} locale={locale} games={games} />)}</div>
+    <CollectionGrid items={collections} directory={directory} locale={locale} rolls={coverRolls} />
   </>
   const title = localized(collection.title, locale)
   const entries = ordered(games.filter(({ id }) => collection.members.includes(id)), locale)

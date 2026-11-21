@@ -101,7 +101,6 @@
 
   margin: 12px 0;
 }
-.section { margin-top: clamp(23px, 4vw, 38px); }
 
 .sectionHeading {
   display: flex;
@@ -119,6 +118,8 @@
 
   > span { @include muted; }
 }
+
+.section, .allGamesHeading { margin-top: clamp(23px, 4vw, 38px); }
 
 .more {
   display: inline-flex;
@@ -197,7 +198,7 @@
   gap: 3px;
   flex: 1;
 
-  strong, span {
+  strong, > span {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -206,13 +207,33 @@
   }
 
   strong { font-size: .91rem; }
-  span { @include muted; }
+  > span { @include muted; }
 }
 
 .rowArrow {
   flex: none;
   margin-left: auto;
   color: var(--muted);
+}
+
+.compact {
+  gap: 8px;
+  min-height: 31px;
+  padding: 3px 5px;
+  background: transparent;
+  border-radius: var(--r-sm);
+
+  .directoryCopy strong {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+  }
+
+  .logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+  }
 }
 
 .media {
@@ -359,13 +380,15 @@
 }
 
 .collectionCard {
-  @include panel;
-  @include interactive;
+  @include panel(0);
 
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  transition: background-color var(--motion);
+
+  &:hover { background-color: var(--surface-hover); }
 }
 
 .collectionCaption {
@@ -382,15 +405,7 @@
     overflow-wrap: anywhere;
   }
 
-  span, small { @include muted; }
-
-  > div {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
-
-  svg { flex: none; color: var(--brand); }
+  small { @include muted; }
 }
 
 .breadcrumb {
@@ -593,20 +608,6 @@
 .readingPanel .readable { margin-top: 19px; }
 .related { margin-top: 22px; }
 
-.relatedSites {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: .91rem;
-  font-weight: 700;
-
-  a {
-    display: inline-block;
-    padding-block: 4px;
-    overflow-wrap: anywhere;
-  }
-}
-
 .shots {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -673,6 +674,8 @@
 
 @media (width <= 450px) {
   .siteGrid { grid-template-columns: minmax(0, 1fr); }
+  .compact { padding-inline: 1px; gap: 4px; }
+  .compact .logo { width: 20px; height: 20px; }
   .gameCoverLink { min-height: 104px; }
   .gameTags { flex-wrap: wrap; gap: 3px 4px; }
 

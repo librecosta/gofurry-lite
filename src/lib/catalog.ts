@@ -4,7 +4,7 @@ import data from '../../content/catalog/catalog.json'
 import policy from '../../content/curation/publication.json'
 import ordinary from '../generated/directory.json'
 import type { Collection, Directory, Game, Group, Site, Tag, Update, View } from './presentation'
-import { inCategory } from './presentation'
+import { gameCover, inCategory } from './presentation'
 
 export type { Locale } from './presentation'
 
@@ -77,10 +77,14 @@ export function initialDirectory(view: View): Directory {
       result.tags = directory.tags
       result.collections = directory.collections.slice(0, 3)
       break
-    case 'collections':
+    case 'collections': {
       result.collections = directory.collections
-      result.games = directory.games.filter(({ id }) => directory.collections.some((item) => item.members[0] === id))
+      const members = new Set(directory.collections.flatMap((item) => item.members))
+      result.collectionCovers = Object.fromEntries(directory.games
+        .filter(({ id }) => members.has(id))
+        .map((game) => [game.id, gameCover(game)]))
       break
+    }
     case 'collection':
       result.collections = directory.collections.filter((item) => item.code === view.code)
       result.games = directory.games.filter(({ id }) => result.collections[0]?.members.includes(id))

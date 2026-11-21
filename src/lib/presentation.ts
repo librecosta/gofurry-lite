@@ -18,6 +18,7 @@ export type Collection = Copy & { id: number; code: string; members: number[] }
 export type Update = Copy & { id: number; date: string; version: string; commit: string; body: Translation }
 export type Directory = {
   sites: DirectorySite[]; games: GameCardData[]; groups: Group[]; collections: Collection[]; tags: Tag[]
+  collectionCovers?: Partial<Record<number, string>>
 }
 export type View =
   | { type: 'groups' | 'games' | 'collections' }
@@ -50,6 +51,10 @@ export function ordered<T extends Copy>(entries: T[], locale: Locale) {
 
 export function steamCover(appId: number) {
   return 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/' + appId + '/header.jpg'
+}
+
+export function gameCover(game: Pick<GameCardData, 'appId' | 'cover'>) {
+  return game.cover || steamCover(game.appId)
 }
 
 export function steamStore(appId: number) {
