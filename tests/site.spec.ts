@@ -539,6 +539,8 @@ test('static pages readable without JavaScript', async ({ browser, baseURL }) =>
       expect(new Set(paths).size).toBe(12)
       expect(paths.every((path) => path?.startsWith(localePrefix + '/games/') && ordinary.has(Number(path.split('/').at(-1))))).toBe(true)
     }
+    await page.goto('/games/collections')
+    await expect(page.locator('main a[href="/games/collections/open-world"] noscript img')).toHaveAttribute('src', /steamstatic/)
     await page.goto('/site/105')
     await expect(page.getByRole('heading', { level: 1 })).toContainText('WildDream')
     await expect(page.getByRole('heading', { name: 'About this website' })).toBeVisible()
@@ -827,6 +829,10 @@ test('site detail aligns its actions with the title and uses the home text link 
   expect(browseBounds!.x).toBeGreaterThanOrEqual(visitBounds!.x + visitBounds!.width)
   await expect(article.locator('a[href="/zh/categories/gallery"]')).toHaveCount(2)
   await expect(article.locator('img').first().locator('..')).toHaveCSS('border-top-width', '0px')
+  const divider = article.getByRole('complementary').locator('..')
+  await expect(divider).toHaveCSS('border-top-style', 'dashed')
+  await expect(divider).toHaveCSS('border-top-width', '2px')
+  await expect(article.locator('aside dl > div').first()).toHaveCSS('border-bottom-width', '2px')
   const related = article.getByRole('heading', { name: '相关网站' }).locator('..')
   const relatedSite = related.getByRole('link').first()
   await expect(relatedSite.locator('img')).toBeVisible()
@@ -868,23 +874,82 @@ test('site detail aligns its actions with the title and uses the home text link 
   await expect(adultSuggestion.getByText('NSFW', { exact: true })).toHaveCSS('display', 'inline-block')
 })
 
+test('game detail text links apply the right tag and persist through reload and browser history', async ({ page }) => {
+  await page.route(/steamstatic\.com/, (route) => route.abort())
+  const matching = catalog.games.filter(({ rating, tags }) => rating === 'sfw' && tags.some(({ id }) => id === 1001))
+  for (const prefix of ['', '/zh']) {
+    await page.goto(prefix + '/games/279')
+    const article = page.getByRole('article')
+    const sidebar = article.getByRole('complementary')
+    const tag = sidebar.getByRole('link', { name: 'FVN', exact: true })
+    const collection = sidebar.locator('a[href="' + prefix + '/games/collections/visual-novel"]')
+    await expect(article.locator('h1').locator('..').getByRole('link', { name: 'FVN', exact: true })).toHaveAttribute('href', prefix + '/games?tag=1001')
+    const rule = sidebar.locator('..')
+    await expect(rule).toHaveCSS('border-top-style', 'dashed')
+    await expect(rule).toHaveCSS('border-top-width', '2px')
+    await expect(sidebar.locator('dl > div').first()).toHaveCSS('border-bottom-width', '2px')
+    for (const link of [collection, tag]) {
+      await link.hover()
+      await expect.poll(() => link.locator('span').evaluate((node) => getComputedStyle(node, '::after').transform))
+        .toBe('matrix(0.62, 0, 0, 1, 0, 0)')
+    }
+
+    await tag.click()
+    await expect(page).toHaveURL(prefix + '/games?tag=1001')
+    const results = page.locator('[data-results="games"] [data-search-id]')
+    await expect(results).toHaveCount(matching.length)
+    const actualIds = await results.evaluateAll((items) => items.map((item) => Number(item.getAttribute('data-search-id'))))
+    expect(actualIds.sort()).toEqual(matching.map(({ id }) => id).sort())
+    await page.reload()
+    await expect(results).toHaveCount(matching.length)
+    await page.getByRole('button', { name: /Advanced filters|高级筛选/ }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('button', { name: /^FVN \d+$/ })).toHaveAttribute('aria-pressed', 'true')
+    await dialog.getByRole('button', { name: /Reset filters|重置筛选/ }).click()
+    await dialog.getByRole('button', { name: /^(Search|查询)$/ }).click()
+    await expect(page).toHaveURL(prefix + '/games')
+    await page.goBack()
+    await expect(page).toHaveURL(prefix + '/games?tag=1001')
+    await expect(results).toHaveCount(matching.length)
+  }
+})
+
 test('collection cards rotate through visible member covers and leave room above the game directory', async ({ page }) => {
   await page.addInitScript(() => {
     Math.random = () => Number(sessionStorage.getItem('collection-test-roll') ?? .999999)
   })
-  await page.route(/steamstatic\.com/, (route) => route.fulfill({
-    contentType: 'image/svg+xml',
-    body: '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="1"><path fill="#914823" d="M0 0h2v1H0z"/></svg>',
-  }))
-
   const sfwGames = new Map(catalog.games.filter(({ rating }) => rating === 'sfw').map((game) => [game.id, gameCover(game)]))
   const { code, members } = catalog.collections[0]
   const covers = members.flatMap((id) => sfwGames.get(id) ?? [])
-  await page.goto('/games')
+  const selected = covers.at(-1)!
+  let finishImage = () => {}
+  const delayedImage = new Promise<void>((resolve) => { finishImage = resolve })
+  await page.route(/steamstatic\.com/, async (route) => {
+    if (route.request().url() === selected) await delayedImage
+    await route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="1"><path fill="#914823" d="M0 0h2v1H0z"/></svg>',
+    })
+  })
+
+  const html = await (await page.request.get('/games/collections')).text()
+  expect(html).toContain(catalog.collections[0].title.en)
+  expect(html.replace(/<noscript>.*?<\/noscript>/gs, '')).not.toMatch(/<img[^>]+steamstatic\.com/)
+  await page.goto('/games', { waitUntil: 'domcontentloaded' })
   const cards = page.locator('main a[href^="/games/collections/"]')
-  await expect(cards).toHaveCount(3)
   const cover = cards.first().locator('img')
-  await expect(cover).toHaveAttribute('src', covers.at(-1)!)
+  try {
+    await expect(cards).toHaveCount(3)
+    await expect(cover).toHaveAttribute('src', selected)
+    await expect(cover).toHaveCSS('opacity', '0')
+  } finally {
+    finishImage()
+  }
+  await expect(cover).toHaveCSS('opacity', '1')
+  const allCollections = page.getByRole('link', { name: 'View all 16 collections' })
+  await allCollections.hover()
+  await expect.poll(() => allCollections.locator('span').evaluate((node) => getComputedStyle(node, '::after').transform))
+    .toBe('matrix(0.62, 0, 0, 1, 0, 0)')
   await expect(cards.first()).toHaveCSS('border-top-width', '0px')
   await expect(cards.first().locator('strong').locator('..').locator('svg')).toHaveCount(0)
   const [lastCard, allGames] = await Promise.all([

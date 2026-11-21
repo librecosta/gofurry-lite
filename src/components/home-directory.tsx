@@ -1,7 +1,7 @@
 import { categories, type CategoryCode } from '../lib/categories'
 import { href, inCategory, intro, localized, type DirectorySite, type Locale } from '../lib/presentation'
 import type { MouseEvent, ReactNode } from 'react'
-import { CategoryIcon, t } from './elements'
+import { CategoryIcon, PageIcon, t } from './elements'
 import { HomeShortcuts } from './home-shortcuts'
 import { Icon } from './icons'
 import { Media } from './media'
@@ -10,8 +10,15 @@ import styles from './home.module.scss'
 
 export function HomeLead({ locale, search }: { locale: Locale; search: ReactNode }) {
   return <div className={styles.discovery}>
-    <h1>{intro[locale].title}</h1>
-    <p>{intro[locale].description}</p>
+    <div className={styles.leadCopy}>
+      <PageIcon name="discovery-compass" />
+      <div>
+        <h1>{intro[locale].title}</h1>
+        <p>{intro[locale].description}</p>
+      </div>
+    </div>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img className={styles.guideArt} src="/media/page-art/hero-fox-guide.webp" alt="" width={1536} height={1024} decoding="async" />
     <div className={styles.leadActions}>
       {search}
       <HomeShortcuts locale={locale} />

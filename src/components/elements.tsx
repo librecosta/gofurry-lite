@@ -15,9 +15,22 @@ export function CategoryIcon({ code, large = false }: { code: CategoryCode; larg
   )
 }
 
-export function Title({ title, description, icon, category }: { title: string; description?: string; icon?: Glyph; category?: CategoryCode }) {
+type PageIconName = 'discovery-compass' | 'gaming-controller' | 'game-collections'
+
+export function PageIcon({ name }: { name: PageIconName }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className={styles.pageArtwork} src={'/media/page-art/' + name + '.png'} alt="" width={52} height={52} decoding="async" />
+  )
+}
+
+export function Title({ title, description, icon, category, artwork }: {
+  title: string; description?: string; icon?: Glyph; category?: CategoryCode; artwork?: PageIconName
+}) {
   return <div className={styles.pageTitle}>
-    {category ? <CategoryIcon code={category} large /> : icon && <span className={styles.titleIcon}><Icon name={icon} size={24} /></span>}
+    {category && <CategoryIcon code={category} large />}
+    {artwork && <PageIcon name={artwork} />}
+    {icon && <span className={styles.titleIcon}><Icon name={icon} size={24} /></span>}
     <div><h1>{title}</h1>{description && <p>{description}</p>}</div>
   </div>
 }

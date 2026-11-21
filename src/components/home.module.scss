@@ -1,4 +1,16 @@
 .discovery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px clamp(12px, 3vw, 28px);
+}
+
+.leadCopy {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(8px, 1.4vw, 16px);
+  min-width: 0;
+
   h1 {
     font-size: clamp(1.65rem, 3.15vw, 2.65rem);
     font-weight: 850;
@@ -7,17 +19,28 @@
   }
 
   p {
-    margin-block: 8px 16px;
+    margin-top: 8px;
     color: var(--muted);
     text-wrap: pretty;
   }
 }
 
+.guideArt {
+  place-self: end center;
+  width: clamp(212px, 24vw, 275px);
+  height: clamp(112px, 13vw, 158px);
+  margin-top: -18px;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
 .leadActions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 14px clamp(16px, 3vw, 42px);
+  row-gap: 14px;
 }
 
 .shortcuts {
@@ -386,9 +409,29 @@
 }
 
 @media (width < 768px) {
+  .guideArt {
+    width: clamp(86px, 25vw, 150px);
+    height: auto;
+    margin-top: 0;
+    align-self: center;
+  }
+
   .leadActions { grid-template-columns: minmax(0, 1fr); }
 
   .shortcuts { gap: clamp(5px, calc(5vw - 10px), 10px); }
   .desktopShortcut { display: none; }
   .shortcuts > .shortcutControl { display: grid; }
+}
+
+@media (width <= 420px) {
+  .leadCopy {
+    grid-area: 1 / 1 / auto / -1;
+
+    p { padding-inline-end: clamp(78px, 24vw, 100px); }
+  }
+
+  .guideArt {
+    grid-area: 1 / 2;
+    align-self: end;
+  }
 }
