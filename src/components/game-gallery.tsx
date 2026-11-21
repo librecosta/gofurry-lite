@@ -81,12 +81,12 @@ export function GameGallery({ screenshots, movies = [], locale }: { screenshots:
   const imageError = t(locale, '截图暂时无法加载。', 'This screenshot could not be loaded.')
   const closeLabel = t(locale, '关闭大图', 'Close enlarged screenshot')
   const items = [
-    ...screenshots.filter((url, index) => screenshots.indexOf(url) === index).map((url, index) => ({
-      kind: 'image' as const, key: url, thumbnail: url, label: t(locale, `截图 ${index + 1}`, `Screenshot ${index + 1}`),
-    })),
     ...movies.slice(0, 4).map((movie, index) => ({
       kind: 'video' as const, key: movie.id, thumbnail: movie.thumbnail, movie,
       label: movie.title || t(locale, `视频 ${index + 1}`, `Video ${index + 1}`),
+    })),
+    ...screenshots.filter((url, index) => screenshots.indexOf(url) === index).map((url, index) => ({
+      kind: 'image' as const, key: url, thumbnail: url, label: t(locale, `截图 ${index + 1}`, `Screenshot ${index + 1}`),
     })),
   ]
   const current = items.find(({ key }) => key === selection) ?? items[0]
