@@ -179,7 +179,7 @@ test('scroll gauge follows document scrolling, seeks by track, drags, and handle
   await gauge.press('Home')
   await expect(gauge).toHaveText('0%')
   expect(await readScroll()).toBe(0)
-  await page.goto('/about')
+  await page.goto('/games/355')
   await expect(gauge).toBeHidden()
   await page.setViewportSize({ width: 1280, height: 230 })
   await expect(gauge).toBeVisible()
