@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { gameCover } from '../src/lib/presentation'
 
 const catalog = JSON.parse(readFileSync(new URL('../content/catalog/catalog.json', import.meta.url), 'utf8')) as typeof import('../content/catalog/catalog.json')
@@ -59,7 +59,13 @@ test('Workers return historical redirects, 404, 410, and HEAD', async ({ request
     expect(response.status(), path).toBe(301)
     expect(response.headers().location).toBe('http://127.0.0.1:8787' + target)
   }
-  for (const path of ['/site/999999', '/sites/183', '/zh/sites/183', '/games/999999', '/site/105.html', '/gfn.dump', '/.local/l1-c2-a/candidates.ndjson']) {
+  for (const path of [
+    '/site/999999', '/sites/183', '/zh/sites/183', '/games/999999', '/gfn.dump',
+    '/.local/l1-c2-a/candidates.ndjson', '/_next/static/missing.css', '/media/missing.webp',
+    '/index.html', '/site/105.html', '/status/gone.html', '/zh/status/not-found.html', '/_not-found.html',
+    '/site/102.html', '/zh/site/102.html', '/games/100.html?ref=old', '/zh/games/100.html',
+    '/site/102.txt', '/zh/games/100.txt', '/__next._full.txt',
+  ]) {
     const response = await request.get(path, { maxRedirects: 0 })
     expect(response.status(), path).toBe(404)
     expect(response.headers()['x-robots-tag']).toBe('noindex')
@@ -76,12 +82,40 @@ test('Workers return historical redirects, 404, 410, and HEAD', async ({ request
   expect(www.headers().location).toBe('https://go-furry.com/games/102?from=legacy')
   expect(await (await request.head('/games/102')).text()).toBe('')
   expect((await request.post('/')).status()).toBe(405)
-  for (const asset of ['gofurry-favicon.png', 'gofurry-horizontal.svg', 'gofurry-symbol.svg', 'gofurry-lite-og.png']) {
-    expect((await request.get('/media/brand/' + asset)).status(), asset).toBe(200)
+  const encoded = await request.get('/zh/games/100%2ehtml')
+  expect(encoded.status()).toBe(404)
+  expect(encoded.headers()['x-robots-tag']).toBe('noindex')
+})
+
+test('existing files bypass the Worker and retain conditional requests', async ({ request }) => {
+  const findAsset = (directory: string, suffix: string) => {
+    const root = new URL('../out' + directory + '/', import.meta.url)
+    const file = readdirSync(root).find((name) => name.endsWith(suffix))
+    expect(file, directory + ' ' + suffix).toBeDefined()
+    return directory + '/' + file
+  }
+  // The Worker has no success branch for these exact file paths.
+  for (const [path, mime] of [
+    [findAsset('/_next/static/chunks', '.css'), /text\/css/],
+    [findAsset('/_next/static/chunks', '.js'), /javascript/],
+    [findAsset('/_next/static/media', '.woff2'), /font\/woff2/],
+    [findAsset('/media/site', '.webp'), /image\/webp/],
+    ['/media/brand/gofurry-favicon.png', /image\/png/],
+    ['/media/brand/gofurry-horizontal.svg', /image\/svg\+xml/],
+    ['/indexes/sites-en.json', /application\/json/],
+  ] as const) {
+    const assetUrl = path + '?hotfix=1'
+    const response = await request.get(assetUrl, { maxRedirects: 0 })
+    expect(response.status(), path).toBe(200)
+    expect(response.headers()['content-type'], path).toMatch(mime)
+    const etag = response.headers().etag
+    expect(etag, path).toBeTruthy()
+    const cached = await request.head(assetUrl, { headers: { 'If-None-Match': etag } })
+    expect(cached.status(), path).toBe(304)
   }
 })
 
-test('SEO assets, sitemap XML and indexing headers work through the Worker', async ({ request, page }) => {
+test('static SEO assets, sitemap XML and Worker indexing headers', async ({ request, page }) => {
   for (const [path, type] of [
     ['/robots.txt', 'text/plain'], ['/sitemap.xml', 'application/xml'], ['/llms.txt', 'text/plain'],
     ['/.well-known/security.txt', 'text/plain'],
@@ -95,6 +129,9 @@ test('SEO assets, sitemap XML and indexing headers work through the Worker', asy
     }
     const preview = await request.head(path, { headers: { host: 'gofurry-lite.example.workers.dev' } })
     expect(preview.headers()['x-robots-tag']).toBe('noindex')
+    const legacySlash = await request.head(path + '/?ref=old', { maxRedirects: 0 })
+    expect(legacySlash.status()).toBe(301)
+    expect(legacySlash.headers().location).toBe('http://127.0.0.1:8787' + path + '?ref=old')
   }
 
   const response = await request.get('/sitemap.xml')

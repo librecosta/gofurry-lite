@@ -5,12 +5,7 @@ const restrictedPaths = new Set(manifest.restrictedPaths)
 const deletedSites = new Set(manifest.deletedSites.map(String))
 const deletedGames = new Set(manifest.deletedGames.map(String))
 const publicHosts = new Set(['go-furry.com', 'localhost', '127.0.0.1', '[::1]'])
-const crawlFiles = new Map([
-  ['/robots.txt', 'text/plain; charset=utf-8'],
-  ['/sitemap.xml', 'application/xml; charset=utf-8'],
-  ['/llms.txt', 'text/plain; charset=utf-8'],
-  ['/.well-known/security.txt', 'text/plain; charset=utf-8'],
-])
+const crawlFiles = new Set(['/robots.txt', '/sitemap.xml', '/llms.txt', '/.well-known/security.txt'])
 
 interface Bindings {
   ASSETS: { fetch(request: Request): Promise<Response> }
@@ -79,22 +74,10 @@ export default {
       return restrictedPaths.has(canonical) || preview ? noindex(response) : response
     }
     if (localPath === '/410' || retired(target)) return error(410)
-    const mime = crawlFiles.get(path)
-    if (mime) {
-      if (isWww || path !== rawPath) return redirect(url, path)
-      const asset = await env.ASSETS.fetch(request)
-      if (asset.status === 404) return error(404)
-      const headers = new Headers(asset.headers)
-      headers.set('content-type', mime)
-      if (preview) headers.set('x-robots-tag', 'noindex')
-      return new Response(asset.body, { status: asset.status, headers })
-    }
-    // HTML pages are available only through the publication manifest.
-    if (/^\/(?:_next|media|indexes)\//.test(rawPath)) {
-      if (isWww) return redirect(url, rawPath)
-      const asset = await env.ASSETS.fetch(request)
-      if (asset.status !== 404) return preview || rawPath.startsWith('/indexes/extended/') ? noindex(asset) : asset
-    }
+    if (path !== rawPath && crawlFiles.has(path)) return redirect(url, path)
+
+    // Existing files are served by Static Assets before Worker execution.
+    // Exact export aliases and missing files stay on the localized error path.
     return error(404)
 
     async function error(status: 404 | 410) {
