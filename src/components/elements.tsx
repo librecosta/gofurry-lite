@@ -49,9 +49,12 @@ export function TextLink({ to, children, className }: { to: string; children: Re
   return <a href={to} className={className ? styles.textLink + ' ' + className : styles.textLink}><span>{children}</span></a>
 }
 
-export function Breadcrumb({ locale, title, parent }: { locale: Locale; title: string; parent?: [string, string] }) {
+export function Breadcrumb({ locale, title, parent, grandparent }: {
+  locale: Locale; title: string; parent?: [string, string]; grandparent?: [string, string]
+}) {
   return <nav className={styles.breadcrumb} aria-label={t(locale, '面包屑导航', 'Breadcrumb')}>
     <a href={href(locale)}>{t(locale, '首页', 'Home')}</a><Icon name="chevron" size={13} />
+    {grandparent && <><a href={href(locale, grandparent[0])}>{grandparent[1]}</a><Icon name="chevron" size={13} /></>}
     {parent && <><a href={href(locale, parent[0])}>{parent[1]}</a><Icon name="chevron" size={13} /></>}
     <span aria-current="page">{title}</span>
   </nav>

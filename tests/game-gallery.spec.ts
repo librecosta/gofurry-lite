@@ -52,6 +52,7 @@ test('screenshot-only archives keep a responsive gallery and a keyboard-accessib
     const dialog = gallery.getByRole('dialog')
     await expect(dialog).toBeVisible()
     await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
     await expect(stage).toBeFocused()
     await gallery.getByRole('button', { name: 'Screenshot 2', exact: true }).press('Space')
     await expect(gallery.getByRole('status')).toHaveText('This screenshot could not be loaded.')

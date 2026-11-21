@@ -4,6 +4,13 @@ const pages = new Set(manifest.pages)
 const restrictedPaths = new Set(manifest.restrictedPaths)
 const deletedSites = new Set(manifest.deletedSites.map(String))
 const deletedGames = new Set(manifest.deletedGames.map(String))
+const publicHosts = new Set(['go-furry.com', 'localhost', '127.0.0.1', '[::1]'])
+const crawlFiles = new Map([
+  ['/robots.txt', 'text/plain; charset=utf-8'],
+  ['/sitemap.xml', 'application/xml; charset=utf-8'],
+  ['/llms.txt', 'text/plain; charset=utf-8'],
+  ['/.well-known/security.txt', 'text/plain; charset=utf-8'],
+])
 
 interface Bindings {
   ASSETS: { fetch(request: Request): Promise<Response> }
@@ -49,6 +56,7 @@ export default {
       url.port = ''
     }
     const isWww = url.hostname !== new URL(request.url).hostname
+    const preview = !publicHosts.has(url.hostname)
     const path = rawPath.replace(/\/+$/, '') || '/'
     const oldEnglish = /^\/en(?:\/|$)/.test(path)
     const prefix = /^\/zh(?:\/|$)/.test(path) ? '/zh' : ''
@@ -68,14 +76,24 @@ export default {
       if (isWww || canonical !== rawPath) return redirect(url, canonical)
       const asset = canonical === '/' ? '/index.html' : canonical + '.html'
       const response = await fetchAsset(env.ASSETS, request, asset)
-      return restrictedPaths.has(canonical) ? noindex(response) : response
+      return restrictedPaths.has(canonical) || preview ? noindex(response) : response
     }
     if (localPath === '/410' || retired(target)) return error(410)
+    const mime = crawlFiles.get(path)
+    if (mime) {
+      if (isWww || path !== rawPath) return redirect(url, path)
+      const asset = await env.ASSETS.fetch(request)
+      if (asset.status === 404) return error(404)
+      const headers = new Headers(asset.headers)
+      headers.set('content-type', mime)
+      if (preview) headers.set('x-robots-tag', 'noindex')
+      return new Response(asset.body, { status: asset.status, headers })
+    }
     // HTML pages are available only through the publication manifest.
-    if (/^\/(?:_next|media|indexes)\//.test(rawPath) || ['/robots.txt', '/sitemap.xml'].includes(rawPath)) {
+    if (/^\/(?:_next|media|indexes)\//.test(rawPath)) {
       if (isWww) return redirect(url, rawPath)
       const asset = await env.ASSETS.fetch(request)
-      if (asset.status !== 404) return rawPath.startsWith('/indexes/extended/') ? noindex(asset) : asset
+      if (asset.status !== 404) return preview || rawPath.startsWith('/indexes/extended/') ? noindex(asset) : asset
     }
     return error(404)
 

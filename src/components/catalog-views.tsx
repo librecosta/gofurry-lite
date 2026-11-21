@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
-import { categories, type CategoryCode } from '../lib/categories'
+import { categories, categoryName, type CategoryCode } from '../lib/categories'
 import { gameCardLabels, type HomeDirectory, type HomeGame } from '../lib/home-games'
 import { gameCover, href, inCategory, labels, localized, ordered, steamStore } from '../lib/presentation'
 import type { Collection, Directory, Game, GameCardData, Locale, Site, Tag, View } from '../lib/presentation'
@@ -18,10 +18,6 @@ import homeStyles from './home.module.scss'
 import styles from './site.module.scss'
 
 type ModeProps = { locale: Locale; directory: Directory; expanded: boolean; coversPending: boolean }
-
-function categoryTitle(code: CategoryCode, locale: Locale) {
-  return categories.find((category) => category[0] === code)![locale === 'zh' ? 1 : 2]
-}
 
 function RatingBadge({ rating }: { rating: Site['rating'] }) {
   return rating === 'nsfw' ? <span className={styles.ratingBadge}>NSFW</span> : null
@@ -48,13 +44,15 @@ function SiteRow({ site, locale, compact = false }: { site: Site; locale: Locale
     media={<Media kind="logo" src={site.logo} eager={compact} />} />
 }
 
-function GameCard({ game, locale, tags = [] }: { game: GameCardData | HomeGame; locale: Locale; tags?: Tag[] }) {
+function GameCard({ game, locale, tags = [], deferCover }: {
+  game: GameCardData | HomeGame; locale: Locale; tags?: Tag[]; deferCover?: boolean
+}) {
   const name = localized(game.title, locale)
   const visibleLabels = 'labels' in game ? game.labels : gameCardLabels(game, (id) => tags.find((tag) => tag.id === id))
   const storeLabel = t(locale, '前往 Steam 商店', 'View on Steam')
   return <div className={styles.gameCard}>
     <a className={styles.gameCoverLink} href={href(locale, '/games/' + game.id)} data-search-id={game.id}>
-      <Media src={gameCover(game)} />
+      <Media src={gameCover(game)} fetchPriority={deferCover ? 'low' : undefined} />
       <span className={styles.gameTitle}>
         <strong>{name}</strong><RatingBadge rating={game.rating} />
       </span>
@@ -70,11 +68,11 @@ function GameCard({ game, locale, tags = [] }: { game: GameCardData | HomeGame; 
   </div>
 }
 
-function CollectionCard({ item, locale, cover, staticCover }: {
-  item: Collection; locale: Locale; cover?: string; staticCover?: string
+function CollectionCard({ item, locale, cover, staticCover, first }: {
+  item: Collection; locale: Locale; cover?: string; staticCover?: string; first: boolean
 }) {
   return <a href={href(locale, '/games/collections/' + item.code)} className={styles.collectionCard}>
-    <Media src={cover} revealOnLoad noScriptSrc={staticCover} />
+    <Media src={cover} eager={first} fetchPriority={first ? 'high' : undefined} revealOnLoad noScriptSrc={staticCover} />
     <div className={styles.collectionCaption}>
       <strong>{localized(item.title, locale)}</strong>
       <small>{item.members.length} {t(locale, '款游戏', item.members.length === 1 ? 'game' : 'games')}</small>
@@ -104,7 +102,7 @@ function CollectionGrid({ items, directory, locale, rolls }: {
       const choices = unused.length ? unused : pool
       const cover = rolls && choices[Math.floor(rolls[i] * choices.length)]
       if (cover) used.add(cover)
-      return <CollectionCard key={item.code} item={item} locale={locale} cover={cover} staticCover={pool[0]} />
+      return <CollectionCard key={item.code} item={item} locale={locale} cover={cover} staticCover={pool[0]} first={i === 0} />
     })}
   </div>
 }
@@ -141,7 +139,7 @@ function SiteDirectory({ title, description, entries, locale, category, expanded
 }) {
   const rows = ordered(entries, locale)
   return <>
-    <Breadcrumb title={title} locale={locale} />
+    <Breadcrumb title={title} locale={locale} parent={category ? undefined : ['/site-groups', labels[locale]['site-groups']]} />
     <Title title={title} description={description} category={category} />
     <Filter locale={locale} kind="sites" expanded={expanded}
       entries={rows.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} /> }))} />
@@ -150,6 +148,7 @@ function SiteDirectory({ title, description, entries, locale, category, expanded
 
 function LegacyGroups({ locale, directory }: ModeProps) {
   return <>
+    <Breadcrumb locale={locale} title={labels[locale]['site-groups']} />
     <Title title={labels[locale]['site-groups']}
       description={t(locale, '按旧站原有分组浏览站点。', 'Browse websites by their original GoFurry groups.')} />
     <div className={styles.siteGrid}>
@@ -183,7 +182,7 @@ function SiteDetail({ site, locale, directory }: { site: Site } & ModeProps) {
   const suggestions = ordered(related.filter(({ id }) => id !== site.id), locale).slice(0, 4)
   return <>
     <Breadcrumb title={name} locale={locale} parent={classification
-      ? ['/categories/' + classification.primary, categoryTitle(classification.primary, locale)] : undefined} />
+      ? ['/categories/' + classification.primary, categoryName(classification.primary, locale)] : undefined} />
     <article className={styles.detail}>
       <div className={styles.siteLead}>
         <Media kind="logo" src={site.logo} eager />
@@ -209,7 +208,7 @@ function SiteDetail({ site, locale, directory }: { site: Site } & ModeProps) {
           <h2>{t(locale, '站点信息', 'Site information')}</h2>
           <dl>
             {classification && <div><dt>{t(locale, '主分类', 'Primary category')}</dt>
-              <dd><TextLink to={href(locale, '/categories/' + classification.primary)}>{categoryTitle(classification.primary, locale)}</TextLink></dd>
+              <dd><TextLink to={href(locale, '/categories/' + classification.primary)}>{categoryName(classification.primary, locale)}</TextLink></dd>
             </div>}
             {groups.length > 0 && <div><dt>{labels[locale]['site-groups']}</dt>
               <dd className={styles.factLinks}>{groups.map((group) => <TextLink key={group.id} to={href(locale, '/site-groups/' + group.id)}>{localized(group.title, locale)}</TextLink>)}</dd>
@@ -248,7 +247,7 @@ function GameDirectory({ locale, directory, expanded, coversPending }: ModeProps
     <Title title={t(locale, '探索兽游', 'Explore furry games')} artwork="gaming-controller"
       description={t(locale, '发现兽人主题的独立游戏与互动作品。', 'Discover furry-themed indie games and interactive works.')} />
     <Filter locale={locale} kind="games" group={gameKindFilters(locale, directory)} expanded={expanded}
-      entries={listed.map((game) => ({ id: game.id, card: <GameCard key={game.id} game={game} locale={locale} tags={tags} /> }))}
+      entries={listed.map((game) => ({ id: game.id, card: <GameCard key={game.id} game={game} locale={locale} tags={tags} deferCover /> }))}
       beforeResults={<>
         <Section title={t(locale, '精选合集', 'Featured collections')}
           more={<TextLink className={homeStyles.sectionAction} to={href(locale, '/games/collections')}>
@@ -272,7 +271,8 @@ function Collections({ locale, collection, directory, coversPending }: { collect
   const title = localized(collection.title, locale)
   const entries = ordered(games.filter(({ id }) => collection.members.includes(id)), locale)
   return <>
-    <Breadcrumb locale={locale} title={title} parent={['/games/collections', labels[locale].collections]} />
+    <Breadcrumb locale={locale} title={title} grandparent={['/games', labels[locale].games]}
+      parent={['/games/collections', labels[locale].collections]} />
     <Title title={title} description={localized(collection.description, locale)} artwork="game-collections" />
     <Section title={t(locale, '收录游戏', 'Games in this collection')}
       more={<span>{entries.length} {t(locale, '款游戏', entries.length === 1 ? 'game' : 'games')}</span>}>
@@ -301,7 +301,7 @@ function GameDetail({ game, locale, directory }: { game: Game } & ModeProps) {
     <Breadcrumb locale={locale} title={name} parent={['/games', labels[locale].games]} />
     <article className={styles.detail}>
       <div className={styles.gameLead}>
-        <Media src={gameCover(game)} label={name} eager />
+        <Media src={gameCover(game)} label={name} eager fetchPriority="high" />
         <div>
           <h1>{name}<RatingBadge rating={game.rating} /></h1>
           {description && <p>{description}</p>}

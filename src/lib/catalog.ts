@@ -2,6 +2,7 @@
 import 'server-only'
 import data from '../../content/catalog/catalog.json'
 import policy from '../../content/curation/publication.json'
+import chineseBodies from '../../content/curation/game-body-zh.json'
 import ordinary from '../generated/directory.json'
 import type { Collection, Directory, Game, Group, Site, Tag, Update, View } from './presentation'
 import { gameCover, inCategory } from './presentation'
@@ -23,7 +24,14 @@ const frozen: FrozenCatalog = data
 export const catalog: Catalog = {
   ...frozen,
   sites: frozen.sites.map((site) => ({ ...site, rating: rating(site.rating) })),
-  games: frozen.games.map((game) => ({ ...game, rating: rating(game.rating) })),
+  games: frozen.games.map((game) => ({
+    ...game,
+    rating: rating(game.rating),
+    body: {
+      ...game.body,
+      zh: game.body.zh || chineseBodies[String(game.id) as keyof typeof chineseBodies],
+    },
+  })),
 }
 
 const publicSiteIds = new Set(policy.siteIds)

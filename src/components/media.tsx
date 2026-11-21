@@ -5,8 +5,9 @@ import { Icon } from './icons'
 import styles from './site.module.scss'
 
 /* Static export serves archived logos and official game media without an image server. */
-export function Media({ src, label, kind = 'cover', eager = false, revealOnLoad = false, noScriptSrc }: {
+export function Media({ src, label, kind = 'cover', eager = false, fetchPriority, revealOnLoad = false, noScriptSrc }: {
   src?: string; label?: string; kind?: 'cover' | 'logo'; eager?: boolean; revealOnLoad?: boolean; noScriptSrc?: string
+  fetchPriority?: 'high' | 'low'
 }) {
   const [failedSource, setFailedSource] = useState<string>()
   const [loadedSource, setLoadedSource] = useState<string>()
@@ -24,7 +25,7 @@ export function Media({ src, label, kind = 'cover', eager = false, revealOnLoad 
     </noscript>}
     {show && (
       // eslint-disable-next-line @next/next/no-img-element
-      <img ref={detectEarlyFailure} src={src} alt={label ?? ''} loading={eager ? 'eager' : 'lazy'}
+      <img ref={detectEarlyFailure} src={src} alt={label ?? ''} loading={eager ? 'eager' : 'lazy'} fetchPriority={fetchPriority}
         decoding={revealOnLoad ? 'sync' : 'async'} data-loading={revealOnLoad && loadedSource !== src || undefined}
         onLoad={revealOnLoad ? () => setLoadedSource(src) : undefined} onError={() => setFailedSource(src)} />
     )}

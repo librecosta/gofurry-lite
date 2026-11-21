@@ -1,0 +1,40 @@
+# GoFurry Lite
+
+> A static archive and discovery directory for furry websites, communities, creative projects, and games.
+
+GoFurry Lite continues the original GoFurry directory using a historical catalogue snapshot dated 2026-11-15. Listings provide historical context and links to original sources. Lite does not monitor live website availability or provide live game prices.
+
+## Home
+
+- [English home](https://go-furry.com/): The default directory.
+- [Simplified Chinese home](https://go-furry.com/zh): The Chinese directory.
+
+## Website categories
+
+- [Communities](https://go-furry.com/categories/community)
+- [Art & Galleries](https://go-furry.com/categories/gallery)
+- [Literature](https://go-furry.com/categories/literature)
+- [Tools & Resources](https://go-furry.com/categories/resources)
+- [Commissions & Marketplace](https://go-furry.com/categories/marketplace)
+- [News & Knowledge](https://go-furry.com/categories/knowledge)
+- [Games & Interactive](https://go-furry.com/categories/gaming)
+- [Events & Organizations](https://go-furry.com/categories/events)
+
+## Games and archives
+
+- [Furry Games Directory](https://go-furry.com/games): Game profiles, tags, and store links.
+- [Furry Game Collections](https://go-furry.com/games/collections): Selections by theme or gameplay.
+- [Original website groups](https://go-furry.com/site-groups): Groups preserved from the legacy directory.
+- [Release notes archive](https://go-furry.com/updates): Public updates from the original site.
+
+## About and policies
+
+- [About GoFurry Lite](https://go-furry.com/about)
+- [Terms of Service](https://go-furry.com/terms)
+- [Privacy Policy](https://go-furry.com/privacy)
+
+## Related links
+
+- [GoFurry](https://gofurry.com): The new, independently developed platform.
+- [GoFurry Lite on GitHub](https://github.com/librecosta/gofurry-lite): Project source.
+- [GitHub Issues](https://github.com/librecosta/gofurry-lite/issues): Feedback and corrections.

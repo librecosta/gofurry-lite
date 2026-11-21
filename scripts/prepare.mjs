@@ -1,15 +1,17 @@
 import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises'
 import assert from 'node:assert/strict'
 import { gameCardLabels, homeGameCount } from '../src/lib/home-games.ts'
+import { landingMetadata } from '../src/lib/seo-copy.ts'
 
 const root = new URL('../', import.meta.url)
 const file = (path) => new URL(path, root)
 const json = async (path) => JSON.parse(await readFile(file(path), 'utf8'))
 
-const [catalog, approved, publication, ratings, links, moviePolicy] = await Promise.all([
+const [catalog, approved, publication, ratings, links, moviePolicy, chineseBodies] = await Promise.all([
   json('content/catalog/catalog.json'), json('content/curation/site-categories.json'),
   json('content/curation/publication.json'), json('content/curation/content-ratings.json'), json('content/curation/site-link-review.json'),
   json('scripts/steam-movie-policy.json'),
+  json('content/curation/game-body-zh.json'),
 ])
 const codes = ['community', 'gallery', 'literature', 'resources', 'marketplace', 'knowledge', 'gaming', 'events']
 const counts = { sites: 225, games: 261, groups: 12, tags: 214, collections: 16, updates: 31 }
@@ -33,6 +35,15 @@ const siteIds = eligible(catalog.sites, publication.siteIds)
 const gameIds = eligible(catalog.games, publication.gameIds)
 const tagIds = new Map(catalog.tags.map((tag) => [tag.id, tag]))
 const adultTag = catalog.tags.find(({ code }) => code === 'adult').id
+const untranslated = catalog.games.filter(({ body }) => !body.zh.trim())
+assert.deepEqual(new Set(Object.keys(chineseBodies)), new Set(untranslated.map(({ id }) => String(id))),
+  'Chinese game body overrides must match the missing translations in the archive')
+for (const game of untranslated) {
+  assert(game.body.en.trim(), 'Translation has no English source: ' + game.id)
+  const translation = chineseBodies[game.id]
+  assert(typeof translation === 'string' && translation.trim() && /\p{Script=Han}/u.test(translation), 'Missing Chinese game body: ' + game.id)
+  game.body.zh = translation
+}
 const linked = new Set([...links.verifiedSnapshotIds, ...Object.keys(links.verifiedOverrides).map(Number)])
 assert.equal(linked.size, links.verifiedSnapshotIds.length + Object.keys(links.verifiedOverrides).length)
 assert([...linked].every((id) => siteIds.has(id)))
@@ -143,7 +154,7 @@ assert.equal(ordinaryGames.length, 203)
 const pathZh = (path) => path === '/' ? '/zh' : '/zh' + path
 const bilingual = (paths) => [...paths, ...paths.map(pathZh)]
 const directoryPaths = [
-  '/', '/games', '/games/collections', '/updates', '/about', '/privacy', '/terms', '/site-groups',
+  ...Object.keys(landingMetadata),
   ...codes.map((code) => '/categories/' + code),
   ...catalog.groups.map(({ id }) => '/site-groups/' + id),
   ...catalog.collections.map(({ code }) => '/games/collections/' + code),

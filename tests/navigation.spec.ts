@@ -173,7 +173,7 @@ for (const width of [320, 390]) {
       const menu = header.getByRole('button', { name: 'Navigation menu' })
       const dock = page.locator('#mobile-navigation')
       const mode = header.getByRole('switch', { name: 'NSFW content' })
-      const brand = page.getByRole('link', { name: 'GoFurry Lite' })
+      const brand = page.getByRole('link', { name: 'GoFurry Lite', exact: true })
       const artwork = brand.locator(':scope > span')
       await expect(artwork.first()).toHaveCSS('width', '138px')
       await expect(artwork.first()).toHaveCSS('height', '34.5px')

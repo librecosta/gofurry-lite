@@ -1,3 +1,5 @@
+import type { Locale } from './presentation'
+
 export const categories = [
   ['community', '社区交流', 'Communities', '论坛与同好交流', 'Forums and conversations'],
   ['gallery', '作品展示', 'Art & Galleries', '插画、摄影与创作', 'Illustration, photography and art'],
@@ -10,3 +12,7 @@ export const categories = [
 ] as const
 
 export type CategoryCode = (typeof categories)[number][0]
+
+export function categoryName(code: CategoryCode, locale: Locale) {
+  return categories.find(([value]) => value === code)![locale === 'zh' ? 1 : 2]
+}

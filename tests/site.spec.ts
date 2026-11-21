@@ -5,6 +5,7 @@ import { gameCover } from '../src/lib/presentation'
 const catalog = JSON.parse(readFileSync(new URL('../content/catalog/catalog.json', import.meta.url), 'utf8')) as typeof import('../content/catalog/catalog.json')
 const classifications: Record<string, { primary: string; secondary: string[] }> =
   JSON.parse(readFileSync(new URL('../content/curation/site-categories.json', import.meta.url), 'utf8'))
+const manifest = JSON.parse(readFileSync(new URL('../src/generated/worker.json', import.meta.url), 'utf8')) as typeof import('../src/generated/worker.json')
 
 const lastRelease = catalog.updates[0].id
 
@@ -77,6 +78,61 @@ test('Workers return historical redirects, 404, 410, and HEAD', async ({ request
   expect((await request.post('/')).status()).toBe(405)
   for (const asset of ['gofurry-favicon.png', 'gofurry-horizontal.svg', 'gofurry-symbol.svg', 'gofurry-lite-og.png']) {
     expect((await request.get('/media/brand/' + asset)).status(), asset).toBe(200)
+  }
+})
+
+test('SEO assets, sitemap XML and indexing headers work through the Worker', async ({ request, page }) => {
+  for (const [path, type] of [
+    ['/robots.txt', 'text/plain'], ['/sitemap.xml', 'application/xml'], ['/llms.txt', 'text/plain'],
+    ['/.well-known/security.txt', 'text/plain'],
+  ]) {
+    for (const method of ['GET', 'HEAD']) {
+      const response = await request.fetch(path, { method, maxRedirects: 0 })
+      expect(response.status(), method + ' ' + path).toBe(200)
+      expect(response.headers()['content-type']).toBe(`${type}; charset=utf-8`)
+      expect(response.headers()['x-robots-tag']).toBeUndefined()
+      if (method === 'HEAD') expect(await response.text()).toBe('')
+    }
+    const preview = await request.head(path, { headers: { host: 'gofurry-lite.example.workers.dev' } })
+    expect(preview.headers()['x-robots-tag']).toBe('noindex')
+  }
+
+  const response = await request.get('/sitemap.xml')
+  const sitemap = await page.evaluate((xml) => {
+    const doc = new DOMParser().parseFromString(xml, 'application/xml')
+    const ns = 'http://www.sitemaps.org/schemas/sitemap/0.9'
+    const xhtml = 'http://www.w3.org/1999/xhtml'
+    return {
+      root: doc.documentElement.localName,
+      errors: doc.getElementsByTagName('parsererror').length,
+      entries: Array.from(doc.getElementsByTagNameNS(ns, 'url'), (node) => ({
+        location: node.getElementsByTagNameNS(ns, 'loc')[0]?.textContent,
+        alternates: Array.from(node.getElementsByTagNameNS(xhtml, 'link'), (link) => link.getAttribute('hreflang')),
+      })),
+    }
+  }, await response.text())
+  expect(sitemap.root).toBe('urlset')
+  expect(sitemap.errors).toBe(0)
+  const restricted = new Set(manifest.restrictedPaths)
+  expect(sitemap.entries.map(({ location }) => location).sort()).toEqual(
+    manifest.pages.filter((path) => !restricted.has(path)).map((path) => 'https://go-furry.com' + path).sort())
+  expect(sitemap.entries.every(({ alternates }) => alternates.join(',') === 'en,zh-CN,x-default')).toBe(true)
+
+  for (const path of ['/games?tags=123&q=example', '/zh/games?tags=123&q=example']) {
+    const response = await request.get(path, { headers: { host: 'go-furry.com' }, maxRedirects: 0 })
+    expect(response.status()).toBe(200)
+    expect(response.headers()['x-robots-tag']).toBeUndefined()
+    expect(await response.text()).toContain('rel="canonical" href="https://go-furry.com' + path.split('?')[0] + '"')
+  }
+  for (const path of ['/site/105', '/zh/site/105']) {
+    const preview = await request.head(path, { headers: { host: 'gofurry-lite.example.workers.dev' } })
+    expect(preview.status()).toBe(200)
+    expect(preview.headers()['x-robots-tag']).toBe('noindex')
+  }
+  for (const path of ['/site/102', '/zh/site/102', '/games/100', '/zh/games/100', '/indexes/extended/game/100.json']) {
+    const response = await request.head(path, { headers: { host: 'go-furry.com' } })
+    expect(response.status(), path).toBe(200)
+    expect(response.headers()['x-robots-tag'], path).toBe('noindex')
   }
 })
 
