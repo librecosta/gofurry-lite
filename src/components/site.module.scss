@@ -4,9 +4,9 @@
   padding-inline: var(--gutter);
 }
 
-@mixin panel($border: 1px solid var(--border)) {
+@mixin panel {
   background: var(--surface);
-  border: $border;
+  border: 0;
   border-radius: var(--r-md);
 }
 
@@ -66,18 +66,6 @@
     text-wrap: pretty;
     overflow-wrap: anywhere;
   }
-}
-
-.titleIcon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  background: var(--brand-soft);
-  color: var(--brand);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  width: 44px;
-  height: 44px;
 }
 
 .pageArtwork {
@@ -195,7 +183,7 @@
 }
 
 .directoryCard {
-  @include panel(0);
+  @include panel;
 
   .logo { border: 0; }
 }
@@ -390,7 +378,7 @@
 }
 
 .collectionCard {
-  @include panel(0);
+  @include panel;
 
   display: flex;
   flex-direction: column;
@@ -440,6 +428,7 @@
   box-shadow: var(--shadow);
 }
 .readingPanel { max-width: 900px; margin-inline: auto; }
+.statusPanel { border: 1px solid var(--border); }
 
 .siteLead, .gameLead {
   display: grid;

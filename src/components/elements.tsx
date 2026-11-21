@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { CategoryCode } from '../lib/categories'
 import { href, type Locale } from '../lib/presentation'
-import { Icon, type Glyph } from './icons'
+import { Icon } from './icons'
 import styles from './site.module.scss'
 
 export const t = (locale: Locale, zh: string, en: string) => locale === 'zh' ? zh : en
@@ -24,13 +24,12 @@ export function PageIcon({ name }: { name: PageIconName }) {
   )
 }
 
-export function Title({ title, description, icon, category, artwork }: {
-  title: string; description?: string; icon?: Glyph; category?: CategoryCode; artwork?: PageIconName
+export function Title({ title, description, category, artwork }: {
+  title: string; description?: string; category?: CategoryCode; artwork?: PageIconName
 }) {
   return <div className={styles.pageTitle}>
     {category && <CategoryIcon code={category} large />}
     {artwork && <PageIcon name={artwork} />}
-    {icon && <span className={styles.titleIcon}><Icon name={icon} size={24} /></span>}
     <div><h1>{title}</h1>{description && <p>{description}</p>}</div>
   </div>
 }

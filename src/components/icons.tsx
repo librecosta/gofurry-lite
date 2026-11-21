@@ -11,7 +11,6 @@ import { ImageIcon } from '@phosphor-icons/react/dist/ssr/Image'
 import { ListIcon } from '@phosphor-icons/react/dist/ssr/List'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass'
 import { MoonIcon } from '@phosphor-icons/react/dist/ssr/Moon'
-import { NewspaperIcon } from '@phosphor-icons/react/dist/ssr/Newspaper'
 import { ShieldCheckIcon } from '@phosphor-icons/react/dist/ssr/ShieldCheck'
 import { ShieldWarningIcon } from '@phosphor-icons/react/dist/ssr/ShieldWarning'
 import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/ssr/SlidersHorizontal'
@@ -25,7 +24,6 @@ import { XLogoIcon } from '@phosphor-icons/react/dist/ssr/XLogo'
 const glyphs = {
   search: MagnifyingGlassIcon,
   image: ImageIcon,
-  news: NewspaperIcon,
   game: GameControllerIcon,
   filter: SlidersHorizontalIcon,
   layers: StackIcon,

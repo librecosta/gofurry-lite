@@ -34,7 +34,7 @@ function safeMarkdownLink(value: string) {
 function Updates({ update, locale }: { update?: Update; locale: Locale }) {
   const title = update ? localized(update.title, locale) : labels[locale].updates
   if (!update) return <>
-    <Title title={title} icon="news" description={t(locale, '旧 GoFurry 的公开版本记录与站点公告。', 'Public release notes and announcements from legacy GoFurry.')} />
+    <Title title={title} description={t(locale, '旧 GoFurry 的公开版本记录与站点公告。', 'Public release notes and announcements from legacy GoFurry.')} />
     <div className={styles.timeline}>
       {catalog.updates.map((row) => <a key={row.id} className={styles.indexItem} href={href(locale, '/updates/' + row.id)}>
         <time dateTime={row.date}>{row.date.slice(0, 10)}</time>
@@ -83,7 +83,7 @@ export function SitePage({ locale, segments }: { locale: Locale; segments: strin
   if (segments.length === 0) return <HomeView locale={locale} initial={home as HomeDirectory} />
   if (section === 'status') {
     const gone = key === 'gone'
-    return <article className={styles.readingPanel}>
+    return <article className={styles.readingPanel + ' ' + styles.statusPanel}>
       <p className={styles.statusCode}>{gone ? '410' : '404'}</p>
       <Title title={gone ? t(locale, '历史页面已退出', 'This legacy page has been retired') : t(locale, '找不到这个页面', 'Page not found')} />
       <More to={href(locale)}>{t(locale, '返回导航首页', 'Back to the directory')}</More>
