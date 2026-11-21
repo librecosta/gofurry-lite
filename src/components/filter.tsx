@@ -2,16 +2,16 @@
 'use client'
 
 import { useMemo, useRef, useState, type ChangeEvent, type CompositionEvent, type ReactNode } from 'react'
+import { FilterDialog, type FilterGroup } from './filter-dialog'
 import { FloatingSearch } from './floating-search'
 import { useStaticData } from './static-data'
 import styles from './site.module.scss'
 
 type Row = [id: number, text: string, ...tags: number[]]
-type Group = { name: string; options: { id: number; label: string }[] }
 type Entry = { id: number; card: ReactNode }
 type Props = {
   entries: Entry[]
-  group?: Group[]
+  group?: FilterGroup[]
   locale: 'zh' | 'en'
   kind: 'sites' | 'games'
   expanded: boolean
@@ -63,20 +63,9 @@ export function Filter({ entries, group = [], locale, kind, expanded, searchLayo
 
   return <div>
     {searchLayout ? searchLayout(search)
-      : <div className={styles.filters}>
+      : <div className={group.length ? styles.filters + ' ' + styles.filtersWithDialog : styles.filters}>
         {search}
-        {group.length > 0 && <div className={styles.selectors}>
-          {group.map(({ name, options }, position) => <label key={name}>
-            <span>{name}</span>
-            <select value={selected[position]} onChange={(event) => {
-              const value = Number(event.target.value)
-              setTags(Array.from({ length: group.length }, (_, i) => i === position ? value : selected[i]))
-            }}>
-              <option value={0}>{zh ? '全部' : 'All'}</option>
-              {options.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
-            </select>
-          </label>)}
-        </div>}
+        {group.length > 0 && <FilterDialog groups={group} selected={selected} locale={locale} onApply={setTags} />}
       </div>}
     {active && !index && <p className={styles.notice} role="status">{source?.failed ? (zh ? '搜索暂不可用。' : 'Search is currently unavailable.') : (zh ? '正在加载索引…' : 'Loading the search index…')}</p>}
     {active && index && <p className={styles.notice} role="status">{zh ? '符合条件的结果 ' + results.length + ' 条' : results.length + (results.length === 1 ? ' result' : ' results')}</p>}

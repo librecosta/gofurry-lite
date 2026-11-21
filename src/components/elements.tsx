@@ -1,13 +1,23 @@
 import type { ReactNode } from 'react'
+import type { CategoryCode } from '../lib/categories'
 import { href, type Locale } from '../lib/presentation'
 import { Icon, type Glyph } from './icons'
 import styles from './site.module.scss'
 
 export const t = (locale: Locale, zh: string, en: string) => locale === 'zh' ? zh : en
 
-export function Title({ title, description, icon }: { title: string; description?: string; icon?: Glyph }) {
+export function CategoryIcon({ code, large = false }: { code: CategoryCode; large?: boolean }) {
+  const size = large ? 48 : 32
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className={styles.categoryIcon} src={`/media/category-icons/pixel/${code}-${large ? 128 : 32}.webp`}
+      alt="" width={size} height={size} decoding="async" />
+  )
+}
+
+export function Title({ title, description, icon, category }: { title: string; description?: string; icon?: Glyph; category?: CategoryCode }) {
   return <div className={styles.pageTitle}>
-    {icon && <span className={styles.titleIcon}><Icon name={icon} size={24} /></span>}
+    {category ? <CategoryIcon code={category} large /> : icon && <span className={styles.titleIcon}><Icon name={icon} size={24} /></span>}
     <div><h1>{title}</h1>{description && <p>{description}</p>}</div>
   </div>
 }

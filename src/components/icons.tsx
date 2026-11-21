@@ -1,7 +1,5 @@
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowRight'
 import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr/ArrowSquareOut'
-import { BookOpenIcon } from '@phosphor-icons/react/dist/ssr/BookOpen'
-import { CalendarDotsIcon } from '@phosphor-icons/react/dist/ssr/CalendarDots'
 import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr/CaretRight'
 import { CheckIcon } from '@phosphor-icons/react/dist/ssr/Check'
 import { CompassIcon } from '@phosphor-icons/react/dist/ssr/Compass'
@@ -16,26 +14,20 @@ import { MoonIcon } from '@phosphor-icons/react/dist/ssr/Moon'
 import { NewspaperIcon } from '@phosphor-icons/react/dist/ssr/Newspaper'
 import { ShieldCheckIcon } from '@phosphor-icons/react/dist/ssr/ShieldCheck'
 import { ShieldWarningIcon } from '@phosphor-icons/react/dist/ssr/ShieldWarning'
-import { ShoppingBagIcon } from '@phosphor-icons/react/dist/ssr/ShoppingBag'
+import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/ssr/SlidersHorizontal'
 import { StackIcon } from '@phosphor-icons/react/dist/ssr/Stack'
 import { SteamLogoIcon } from '@phosphor-icons/react/dist/ssr/SteamLogo'
 import { SunIcon } from '@phosphor-icons/react/dist/ssr/Sun'
 import { TranslateIcon } from '@phosphor-icons/react/dist/ssr/Translate'
-import { UsersIcon } from '@phosphor-icons/react/dist/ssr/Users'
-import { WrenchIcon } from '@phosphor-icons/react/dist/ssr/Wrench'
 import { XIcon } from '@phosphor-icons/react/dist/ssr/X'
 import { XLogoIcon } from '@phosphor-icons/react/dist/ssr/XLogo'
 
 const glyphs = {
   search: MagnifyingGlassIcon,
-  users: UsersIcon,
   image: ImageIcon,
-  book: BookOpenIcon,
-  tool: WrenchIcon,
-  bag: ShoppingBagIcon,
   news: NewspaperIcon,
   game: GameControllerIcon,
-  calendar: CalendarDotsIcon,
+  filter: SlidersHorizontalIcon,
   layers: StackIcon,
   external: ArrowSquareOutIcon,
   arrow: ArrowRightIcon,

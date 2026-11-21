@@ -103,8 +103,24 @@ test('search, game category and species filters, and locale continuity', async (
   const entry = catalog.games.find(({ id }) => id === 102)!
   const category = entry.tags.find(({ id }) => catalog.tags.some((tag) => tag.id === id && tag.category === 'classification'))!
   const species = entry.tags.find(({ id }) => catalog.tags.some((tag) => tag.id === id && tag.category === 'species'))!
-  await page.getByLabel('Game category').selectOption(String(category.id))
-  await page.getByLabel('Species').selectOption(String(species.id))
+  const filters = page.getByRole('button', { name: 'Advanced filters' })
+  const dialog = page.getByRole('dialog', { name: 'Advanced filters' })
+  const gameCategory = dialog.getByLabel('Game category')
+  const gameSpecies = dialog.getByLabel('Species')
+  await expect(page.getByRole('combobox')).toHaveCount(0)
+  await filters.click()
+  await expect(gameCategory).toBeFocused()
+  await gameCategory.selectOption(String(category.id))
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(filters).toBeFocused()
+  await filters.press('Enter')
+  await expect(gameCategory).toHaveValue('0')
+  await gameCategory.selectOption(String(category.id))
+  await gameSpecies.selectOption(String(species.id))
+  await dialog.getByRole('button', { name: 'Apply filters' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(filters).toHaveAttribute('data-active', 'true')
   await expect(page.getByRole('status')).toHaveText('1 result')
   await expect(page.getByRole('link', { name: /^Threefold Recital/ })).toBeVisible()
   await page.getByRole('searchbox').fill('nonexistent-catalog-entry')
@@ -114,8 +130,30 @@ test('search, game category and species filters, and locale continuity', async (
   await page.getByRole('button', { name: 'Clear search' }).click()
   await expect(gameSearch).toHaveValue('')
   await expect(gameSearch).toBeFocused()
-  await expect(page.getByLabel('Game category')).toHaveValue(String(category.id))
-  await expect(page.getByLabel('Species')).toHaveValue(String(species.id))
+  const filteredGames = catalog.games.filter(({ rating, tags }) => rating === 'sfw' &&
+    [category.id, species.id].every((id) => tags.some((tag) => tag.id === id)))
+  const results = page.locator('[data-results="games"] [data-search-id]')
+  await expect(results).toHaveCount(filteredGames.length)
+  await filters.click()
+  await expect(gameCategory).toHaveValue(String(category.id))
+  await expect(gameSpecies).toHaveValue(String(species.id))
+  await dialog.getByRole('button', { name: 'Reset' }).click()
+  await dialog.getByRole('button', { name: 'Apply filters' }).click()
+  await expect(filters).not.toHaveAttribute('data-active')
+  await expect(results).toHaveCount(catalog.games.filter(({ rating }) => rating === 'sfw').length)
+
+  await page.setViewportSize({ width: 320, height: 650 })
+  await page.goto('/zh/games')
+  const mobileSearch = page.getByRole('searchbox', { name: '搜索游戏' }).locator('..')
+  const mobileFilters = page.getByRole('button', { name: '高级筛选' })
+  const [inputBox, buttonBox] = await Promise.all([mobileSearch.boundingBox(), mobileFilters.boundingBox()])
+  expect(buttonBox!.y).toBeCloseTo(inputBox!.y, 0)
+  expect(buttonBox!.x).toBeGreaterThan(inputBox!.x + inputBox!.width)
+  await mobileFilters.click()
+  const mobileDialog = page.getByRole('dialog', { name: '高级筛选' })
+  await expect(mobileDialog.getByLabel('物种标签')).toBeVisible()
+  expect((await mobileDialog.boundingBox())!.width).toBeLessThan(320)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
 test('legacy groups and category directories reuse borderless site cards and the home search', async ({ page }) => {
@@ -131,6 +169,14 @@ test('legacy groups and category directories reuse borderless site cards and the
     await page.goto(path)
     if (path.includes('site-groups')) {
       await expect(page.getByRole('heading', { level: 1 }).locator('../..').locator('svg')).toHaveCount(0)
+    } else {
+      const heading = page.getByRole('heading', { level: 1 })
+      const icon = heading.locator('../..').locator('img')
+      await expect(icon).toHaveAttribute('src', '/media/category-icons/pixel/gallery-128.webp')
+      await expect(icon).toHaveJSProperty('naturalWidth', 128)
+      await expect(icon).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+      await expect(icon).toHaveCSS('border-top-width', '0px')
+      expect((await icon.boundingBox())!.x).toBeLessThan((await heading.boundingBox())!.x)
     }
     const search = page.getByRole('searchbox', { name: '搜索网站' })
     const card = page.locator('[data-results="sites"] a[href="/zh/site/105"]')
@@ -225,6 +271,13 @@ test('all homepage category members render with mode-specific counts and separat
   }
 
   const codes = [...new Set(Object.values(classifications).map(({ primary }) => primary))]
+  for (const code of codes) {
+    const icon = page.locator('[data-category="' + code + '"] h3 img')
+    await expect(icon).toHaveAttribute('src', '/media/category-icons/pixel/' + code + '-32.webp')
+    await expect(icon).toHaveJSProperty('naturalWidth', 32)
+    await expect(icon).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await expect(icon).toHaveCSS('border-top-width', '0px')
+  }
   const mode = page.getByRole('switch', { name: 'NSFW content' })
   for (const expanded of [false, true]) {
     if (expanded) await mode.click()
@@ -744,6 +797,13 @@ test('site detail aligns its actions with the title and uses the home text link 
   expect(visitBounds!.x).toBeGreaterThanOrEqual(titleBounds!.x + titleBounds!.width)
   expect(browseBounds!.x).toBeGreaterThanOrEqual(visitBounds!.x + visitBounds!.width)
   await expect(article.locator('a[href="/zh/categories/gallery"]')).toHaveCount(2)
+  await expect(article.locator('img').first().locator('..')).toHaveCSS('border-top-width', '0px')
+  const related = article.getByRole('heading', { name: '相关网站' }).locator('..')
+  await expect(related.locator('img, svg')).toHaveCount(0)
+  const relatedSite = related.getByRole('link').first()
+  await relatedSite.hover()
+  await expect(relatedSite).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await expect(relatedSite).toHaveCSS('border-top-width', '0px')
 
   const facts = article.getByRole('complementary')
   const category = facts.getByRole('link', { name: '作品展示' })

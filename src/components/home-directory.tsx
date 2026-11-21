@@ -1,7 +1,7 @@
 import { categories, type CategoryCode } from '../lib/categories'
 import { href, inCategory, intro, localized, type DirectorySite, type Locale } from '../lib/presentation'
 import type { MouseEvent, ReactNode } from 'react'
-import { t } from './elements'
+import { CategoryIcon, t } from './elements'
 import { HomeShortcuts } from './home-shortcuts'
 import { Icon } from './icons'
 import { Media } from './media'
@@ -63,13 +63,13 @@ export function HomeCategories({ sites, locale }: { sites: DirectorySite[]; loca
   const visited = useVisitedSites()
   const sorted = [...sites].sort((a, b) => a.id - b.id)
   return <div className={styles.categoryGrid} data-category-grid>
-    {homeCategories.map(([code, zh, en, zhDescription, enDescription, icon]) => {
+    {homeCategories.map(([code, zh, en, zhDescription, enDescription]) => {
       const heading = t(locale, zh, en)
       const members = sorted.filter((site) => inCategory(site, code))
       const titleId = 'category-title-' + code
       return <section key={code} className={styles.categoryCard + ' ' + colors[code]} aria-labelledby={titleId} data-category={code}>
         <header className={styles.categoryHeader}>
-          <h3 id={titleId}><Icon name={icon} size={21} />{heading}</h3>
+          <h3 id={titleId}><CategoryIcon code={code} />{heading}</h3>
           <p>{t(locale, zhDescription, enDescription)}</p>
         </header>
         <div className={styles.categoryScroll} tabIndex={0} role="group"

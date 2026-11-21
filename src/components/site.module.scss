@@ -80,32 +80,20 @@
   height: 44px;
 }
 
+.categoryIcon {
+  flex: none;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
 .filters {
   margin: 0 0 18px;
 }
 
-.selectors {
-  display: flex;
-  gap: 9px 14px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-
-  label {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    max-width: 100%;
-    font-size: .86rem;
-    font-weight: 650;
-  }
-
-  select {
-    max-width: min(205px, 56vw);
-    padding: 6px 11px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--r-sm);
-    background: var(--input);
-  }
+.filtersWithDialog {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
 }
 
 .notice {
@@ -200,7 +188,7 @@
 .directoryCard {
   @include panel(0);
 
-  &:not(.compact) .logo { border: 0; }
+  .logo { border: 0; }
 }
 
 .directoryCopy, .indexItem > div {
@@ -225,21 +213,6 @@
   flex: none;
   margin-left: auto;
   color: var(--muted);
-}
-
-.compact {
-  gap: 8px;
-  min-height: 31px;
-  padding: 3px 5px;
-  border: 1px solid transparent;
-  background: transparent;
-  border-radius: var(--r-sm);
-
-  .logo {
-    width: 24px;
-    height: 24px;
-    border-radius: 5px;
-  }
 }
 
 .media {
@@ -469,6 +442,7 @@
     grid-row: 1 / span 2;
     width: clamp(50px, 8vw, 86px);
     height: clamp(50px, 8vw, 86px);
+    border: 0;
   }
 
   > p {
@@ -619,6 +593,20 @@
 .readingPanel .readable { margin-top: 19px; }
 .related { margin-top: 22px; }
 
+.relatedSites {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: .91rem;
+  font-weight: 700;
+
+  a {
+    display: inline-block;
+    padding-block: 4px;
+    overflow-wrap: anywhere;
+  }
+}
+
 .shots {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -685,8 +673,6 @@
 
 @media (width <= 450px) {
   .siteGrid { grid-template-columns: minmax(0, 1fr); }
-  .compact { padding-inline: 1px; gap: 4px; }
-  .compact .logo { width: 20px; height: 20px; }
   .gameCoverLink { min-height: 104px; }
   .gameTags { flex-wrap: wrap; gap: 3px 4px; }
 

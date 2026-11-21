@@ -9,7 +9,7 @@ import { Breadcrumb, More, Section, TextLink, Title, t } from './elements'
 import { Filter } from './filter'
 import { HomeCategories, HomeLead } from './home-directory'
 import { useHomeGameRotation } from './home-game-rotation'
-import { Icon, type Glyph } from './icons'
+import { Icon } from './icons'
 import { Media } from './media'
 import { useContentMode } from './preferences'
 import { useStaticData } from './static-data'
@@ -26,25 +26,24 @@ function RatingBadge({ rating }: { rating: Site['rating'] }) {
   return rating === 'nsfw' ? <span className={styles.ratingBadge}>NSFW</span> : null
 }
 
-function DirectoryCard({ to, title, description, media, siteId, compact = false }: {
-  to: string; title: ReactNode; description?: ReactNode; media?: ReactNode; siteId?: number; compact?: boolean
+function DirectoryCard({ to, title, description, media, siteId }: {
+  to: string; title: ReactNode; description?: ReactNode; media?: ReactNode; siteId?: number
 }) {
-  const className = compact ? styles.directoryCard + ' ' + styles.compact : styles.directoryCard
-  return <a href={to} className={className} data-search-id={compact ? undefined : siteId}>
+  return <a href={to} className={styles.directoryCard} data-search-id={siteId}>
     {media}
     <span className={styles.directoryCopy}>
       <strong>{title}</strong>
       {description && <span>{description}</span>}
     </span>
-    {!compact && <span className={styles.rowArrow}><Icon name="chevron" size={15} /></span>}
+    <span className={styles.rowArrow}><Icon name="chevron" size={15} /></span>
   </a>
 }
 
-function SiteRow({ site, locale, compact = false }: { site: Site; locale: Locale; compact?: boolean }) {
-  return <DirectoryCard to={href(locale, '/site/' + site.id)} siteId={site.id} compact={compact}
+function SiteRow({ site, locale }: { site: Site; locale: Locale }) {
+  return <DirectoryCard to={href(locale, '/site/' + site.id)} siteId={site.id}
     title={<>{localized(site.title, locale)}<RatingBadge rating={site.rating} /></>}
-    description={!compact && localized(site.description, locale)}
-    media={<Media kind="logo" src={site.logo} eager={compact} />} />
+    description={localized(site.description, locale)}
+    media={<Media kind="logo" src={site.logo} />} />
 }
 
 function gameCover(game: Pick<GameCardData, 'appId' | 'cover'>) {
@@ -111,13 +110,13 @@ export function HomeView({ locale, initial }: { locale: Locale; initial: HomeDir
   </>
 }
 
-function SiteDirectory({ title, description, entries, locale, icon, expanded }: {
-  title: string; description: string; entries: Site[]; locale: Locale; icon?: Glyph; expanded: boolean
+function SiteDirectory({ title, description, entries, locale, category, expanded }: {
+  title: string; description: string; entries: Site[]; locale: Locale; category?: CategoryCode; expanded: boolean
 }) {
   const rows = ordered(entries, locale)
   return <>
     <Breadcrumb title={title} locale={locale} />
-    <Title title={title} description={description} icon={icon} />
+    <Title title={title} description={description} category={category} />
     <Filter locale={locale} kind="sites" expanded={expanded}
       entries={rows.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} /> }))} />
   </>
@@ -176,7 +175,11 @@ function SiteDetail({ site, locale, directory }: { site: Site } & ModeProps) {
           {description && <section><h2>{t(locale, '关于网站', 'About this website')}</h2><PlainBody value={description} /></section>}
           {suggestions.length > 0 && <section className={styles.related}>
             <h2>{t(locale, '相关网站', 'Related websites')}</h2>
-            {suggestions.map((item) => <SiteRow key={item.id} site={item} locale={locale} compact />)}
+            <ul className={styles.relatedSites} role="list">
+              {suggestions.map((item) => <li key={item.id}>
+                <a href={href(locale, '/site/' + item.id)}>{localized(item.title, locale)}<RatingBadge rating={item.rating} /></a>
+              </li>)}
+            </ul>
           </section>}
         </div>
         {(classification || groups.length > 0) && <aside className={styles.facts}>
@@ -333,7 +336,7 @@ export function CatalogView({ view, initial, detail, locale }: {
       const category = categories.find(([code]) => code === view.code)!
       content = <SiteDirectory locale={locale} expanded={expanded} title={category[locale === 'zh' ? 1 : 2]}
         description={category[locale === 'zh' ? 3 : 4]} entries={directory.sites.filter((site) => inCategory(site, view.code))}
-        icon={category[5]} />
+        category={category[0]} />
       break
     }
     case 'group': {
