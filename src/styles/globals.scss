@@ -25,13 +25,11 @@ body {
   margin: 0;
 }
 
-/* Tool4Furry's vertical mask combines with an independent fade on each side. */
+/* Keep each edge visible at every scroll position, with a fade toward the center. */
 .page-dots {
   position: fixed;
   z-index: -1;
-  inset: 0 0 auto;
-  height: min(720px, 100svh);
-  mask-image: linear-gradient(to bottom, #000 18%, transparent);
+  inset: 0;
   pointer-events: none;
 
   &::before, &::after {
@@ -62,9 +60,6 @@ body {
 
 @media (width < 768px) {
   .page-dots {
-    height: min(185px, 100svh);
-    mask-image: linear-gradient(to bottom, #000, transparent);
-
     &::before {
       width: 100%;
       color: var(--dot-small);
@@ -131,8 +126,6 @@ html[data-theme-reveal]::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
-
-html[data-theme-reveal]::view-transition-new(root) { clip-path: var(--theme-reveal-clip); }
 
 @media (width >= 768px) {
   html { scroll-padding-block-start: 76px; }

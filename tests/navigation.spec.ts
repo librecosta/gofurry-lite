@@ -56,11 +56,10 @@ test('desktop navigation keeps its required order and both themes remain translu
     }
   })
   expect(dotLayer).toMatchObject({
-    position: 'fixed', top: '0px', pointerEvents: 'none', height: '720px',
+    position: 'fixed', top: '0px', pointerEvents: 'none', height: '800px', mask: 'none',
     left: { edge: '0px', width: '432px', spacing: '30px 30px' },
     right: { edge: '0px', width: '432px', spacing: '30px 30px' },
   })
-  expect(dotLayer.mask).toContain('18%')
   expect(dotLayer.left.mask).toMatch(/linear-gradient\((?:90deg|to right),/)
   expect(dotLayer.right.mask).toMatch(/linear-gradient\((?:270deg|to left),/)
   const theme = nav.getByRole('button', { name: 'Toggle light or dark theme' })
@@ -185,7 +184,8 @@ for (const width of [320, 390]) {
       expect(modeBounds!.x + modeBounds!.width).toBeLessThan(menuBounds!.x)
       expect(menuBounds!.x + menuBounds!.width).toBeLessThanOrEqual(width)
       const dots = page.locator('.page-dots')
-      await expect(dots).toHaveCSS('height', '185px')
+      await expect(dots).toHaveCSS('height', '720px')
+      await expect(dots).toHaveCSS('mask-image', 'none')
       expect(await dots.evaluate((element) => ({
         spacing: getComputedStyle(element, '::before').backgroundSize,
         rightDisplay: getComputedStyle(element, '::after').display,

@@ -109,6 +109,43 @@ test('search, game category and species filters, and locale continuity', async (
   await expect(page.getByRole('link', { name: /^Threefold Recital/ })).toBeVisible()
   await page.getByRole('searchbox').fill('nonexistent-catalog-entry')
   await expect(page.getByRole('status')).toHaveText('0 results')
+  const gameSearch = page.getByRole('searchbox', { name: 'Search games' })
+  await expect(gameSearch.locator('..').locator('legend')).toHaveText('Search games')
+  await page.getByRole('button', { name: 'Clear search' }).click()
+  await expect(gameSearch).toHaveValue('')
+  await expect(gameSearch).toBeFocused()
+  await expect(page.getByLabel('Game category')).toHaveValue(String(category.id))
+  await expect(page.getByLabel('Species')).toHaveValue(String(species.id))
+})
+
+test('legacy groups and category directories reuse borderless site cards and the home search', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.goto('/zh/site-groups')
+  const groups = page.locator('main a[href^="/zh/site-groups/"]')
+  await expect(groups).toHaveCount(12)
+  await expect(groups.first()).toHaveCSS('border-top-width', '0px')
+  await expect(groups.first().locator('svg')).toHaveCount(1)
+  await expect(page.getByRole('heading', { level: 1 }).locator('../..').locator('svg')).toHaveCount(0)
+
+  for (const path of ['/zh/site-groups/100', '/zh/categories/gallery']) {
+    await page.goto(path)
+    if (path.includes('site-groups')) {
+      await expect(page.getByRole('heading', { level: 1 }).locator('../..').locator('svg')).toHaveCount(0)
+    }
+    const search = page.getByRole('searchbox', { name: '搜索网站' })
+    const card = page.locator('[data-results="sites"] a[href="/zh/site/105"]')
+    const outline = search.locator('..').locator('fieldset')
+    await expect(outline).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
+    await search.fill('WildDream')
+    await expect(outline).toHaveCSS('border-top-width', '2px')
+    await expect(outline.locator('legend')).toHaveCSS('max-inline-size', '100%')
+    await expect(card).toBeVisible()
+    await expect(card).toHaveCSS('border-top-width', '0px')
+    await expect(card.locator(':scope > span').first()).toHaveCSS('border-top-width', '0px')
+    await search.press('Escape')
+    await expect(search).toHaveValue('')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  }
 })
 
 test('homepage floating search handles the outline notch, IME and clear controls', async ({ page }) => {

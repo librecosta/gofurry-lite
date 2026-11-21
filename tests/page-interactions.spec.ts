@@ -35,6 +35,7 @@ for (const width of [1440, 390]) {
     const trigger = page.getByRole('button', { name: 'Toggle light or dark theme' })
     await expect(trigger).toBeEnabled()
     const scrollBefore = await page.evaluate(() => scrollY)
+    const rootStyle = await page.locator('html').getAttribute('style')
     const trace = await revealFrames(trigger)
     const button = (await trigger.boundingBox())!
     await page.mouse.click(button.x + button.width / 2, button.y + button.height / 2)
@@ -49,6 +50,7 @@ for (const width of [1440, 390]) {
     expect(await page.evaluate(() => scrollY)).toBe(scrollBefore)
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('html')).not.toHaveAttribute('data-theme-reveal')
+    expect(await page.locator('html').getAttribute('style')).toBe(rootStyle)
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   })

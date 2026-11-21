@@ -2,7 +2,7 @@
 
 import { useId, useRef, type ComponentProps, type CSSProperties } from 'react'
 import { Icon } from './icons'
-import styles from './home.module.scss'
+import styles from './floating-search.module.scss'
 
 // Floating label, outline notch and character stagger adapted from Bencho (MIT).
 export function FloatingSearch({ field, label, clearLabel, onClear }: {

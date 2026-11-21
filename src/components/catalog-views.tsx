@@ -26,20 +26,25 @@ function RatingBadge({ rating }: { rating: Site['rating'] }) {
   return rating === 'nsfw' ? <span className={styles.ratingBadge}>NSFW</span> : null
 }
 
-function SiteRow({ site, locale, compact = false, searchResult = false }: {
-  site: Site; locale: Locale; compact?: boolean; searchResult?: boolean
+function DirectoryCard({ to, title, description, media, siteId, compact = false }: {
+  to: string; title: ReactNode; description?: ReactNode; media?: ReactNode; siteId?: number; compact?: boolean
 }) {
-  const name = localized(site.title, locale)
-  const description = localized(site.description, locale)
-  const className = [styles.siteRow, compact && styles.compact, searchResult && styles.siteSearchResult].filter(Boolean).join(' ')
-  return <a href={href(locale, '/site/' + site.id)} className={className} data-search-id={compact ? undefined : site.id}>
-    <Media kind="logo" src={site.logo} eager={compact} />
-    <span className={styles.siteCopy}>
-      <strong>{name}<RatingBadge rating={site.rating} /></strong>
-      {!compact && description && <span>{description}</span>}
+  const className = compact ? styles.directoryCard + ' ' + styles.compact : styles.directoryCard
+  return <a href={to} className={className} data-search-id={compact ? undefined : siteId}>
+    {media}
+    <span className={styles.directoryCopy}>
+      <strong>{title}</strong>
+      {description && <span>{description}</span>}
     </span>
-    <span className={styles.rowArrow}><Icon name="chevron" size={15} /></span>
+    {!compact && <span className={styles.rowArrow}><Icon name="chevron" size={15} /></span>}
   </a>
+}
+
+function SiteRow({ site, locale, compact = false }: { site: Site; locale: Locale; compact?: boolean }) {
+  return <DirectoryCard to={href(locale, '/site/' + site.id)} siteId={site.id} compact={compact}
+    title={<>{localized(site.title, locale)}<RatingBadge rating={site.rating} /></>}
+    description={!compact && localized(site.description, locale)}
+    media={<Media kind="logo" src={site.logo} eager={compact} />} />
 }
 
 function gameCover(game: Pick<GameCardData, 'appId' | 'cover'>) {
@@ -87,7 +92,7 @@ export function HomeView({ locale, initial }: { locale: Locale; initial: HomeDir
     {failed && <p className={styles.notice} role="status">{t(locale, 'NSFW 资料暂不可用。', 'NSFW entries could not be loaded.')}</p>}
     <Filter locale={locale} kind="sites" expanded={expanded}
       searchLayout={(search) => <HomeLead locale={locale} search={search} />}
-      entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} searchResult /> }))}
+      entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} /> }))}
       beforeResults={<>
         <Section title={t(locale, '探索分类', 'Explore categories')}
           more={<a className={homeStyles.sectionAction} href={href(locale, '/site-groups')}>
@@ -113,7 +118,7 @@ export function HomeView({ locale, initial }: { locale: Locale; initial: HomeDir
 }
 
 function SiteDirectory({ title, description, entries, locale, icon, expanded }: {
-  title: string; description: string; entries: Site[]; locale: Locale; icon: Glyph; expanded: boolean
+  title: string; description: string; entries: Site[]; locale: Locale; icon?: Glyph; expanded: boolean
 }) {
   const rows = ordered(entries, locale)
   return <>
@@ -126,12 +131,12 @@ function SiteDirectory({ title, description, entries, locale, icon, expanded }: 
 
 function LegacyGroups({ locale, directory }: ModeProps) {
   return <>
-    <Title title={labels[locale]['site-groups']} icon="layers"
+    <Title title={labels[locale]['site-groups']}
       description={t(locale, '按旧站原有分组浏览站点。', 'Browse websites by their original GoFurry groups.')} />
     <div className={styles.siteGrid}>
-      {directory.groups.map((group) => <a className={styles.indexItem} key={group.id} href={href(locale, '/site-groups/' + group.id)}>
-        <Icon name="layers" /><div><strong>{localized(group.title, locale)}</strong><span>{group.members.length} {t(locale, '个站点', 'sites')}</span></div><Icon name="chevron" size={16} />
-      </a>)}
+      {directory.groups.map((group) => <DirectoryCard key={group.id} to={href(locale, '/site-groups/' + group.id)}
+        title={localized(group.title, locale)}
+        description={group.members.length + ' ' + t(locale, '个站点', group.members.length === 1 ? 'site' : 'sites')} />)}
     </div>
   </>
 }
@@ -339,7 +344,7 @@ export function CatalogView({ view, initial, detail, locale }: {
     case 'group': {
       const group = directory.groups.find(({ id }) => id === view.id)!
       content = <SiteDirectory locale={locale} expanded={expanded} title={localized(group.title, locale)} description={localized(group.description, locale)}
-        entries={directory.sites.filter((site) => group.members.includes(site.id))} icon="layers" />
+        entries={directory.sites.filter((site) => group.members.includes(site.id))} />
       break
     }
     case 'collections': content = <Collections {...props} />; break

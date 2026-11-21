@@ -3,7 +3,6 @@
 
 import { useMemo, useRef, useState, type ChangeEvent, type CompositionEvent, type ReactNode } from 'react'
 import { FloatingSearch } from './floating-search'
-import { Icon } from './icons'
 import { useStaticData } from './static-data'
 import styles from './site.module.scss'
 
@@ -34,9 +33,9 @@ export function Filter({ entries, group = [], locale, kind, expanded, searchLayo
   const rows = source?.value
   const index = useMemo(() => rows && new Map(rows.map((row) => [row[0], row])), [rows])
   const zh = locale === 'zh'
-  const searchLabel = kind === 'sites'
-    ? zh ? '搜索网站名称、关键词或简介' : 'Search by site name, keyword or description'
-    : zh ? '搜索游戏名称、描述或标签' : 'Search by game name, description or tag'
+  const searchLabel = searchLayout ? (zh ? '搜索兽圈网站' : 'Search furry websites')
+    : kind === 'sites' ? (zh ? '搜索网站' : 'Search websites')
+    : (zh ? '搜索游戏' : 'Search games')
   const results = active
     ? entries.filter(({ id }) => {
       const row = index?.get(id)
@@ -59,15 +58,13 @@ export function Filter({ entries, group = [], locale, kind, expanded, searchLayo
     },
   }
 
+  const search = <FloatingSearch field={field} label={searchLabel}
+    clearLabel={zh ? '清除搜索' : 'Clear search'} onClear={() => { setText(''); setQuery('') }} />
+
   return <div>
-    {searchLayout ? searchLayout(<FloatingSearch field={field} label={zh ? '搜索兽圈网站' : 'Search furry websites'}
-      clearLabel={zh ? '清除搜索' : 'Clear search'} onClear={() => { setText(''); setQuery('') }} />)
+    {searchLayout ? searchLayout(search)
       : <div className={styles.filters}>
-        <label className={styles.search}>
-          <Icon name="search" />
-          <span className="sr-only">{searchLabel}</span>
-          <input {...field} placeholder={searchLabel} />
-        </label>
+        {search}
         {group.length > 0 && <div className={styles.selectors}>
           {group.map(({ name, options }, position) => <label key={name}>
             <span>{name}</span>

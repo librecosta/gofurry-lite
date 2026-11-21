@@ -1,47 +1,32 @@
-import { animate } from 'motion/react'
 import { flushSync } from 'react-dom'
-import { reveal } from './motion'
-
-let active: ViewTransition | undefined
 
 export function revealTheme(button: HTMLButtonElement, update: () => void) {
-  if (active) {
-    active.skipTransition()
-    void active.updateCallbackDone.then(update, update)
-    return
-  }
+  const root = document.documentElement
+  if (root.hasAttribute('data-theme-reveal')) return
 
-  if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!document.startViewTransition || !root.animate || document.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) {
     update()
     return
   }
 
-  const root = document.documentElement
   const bounds = button.getBoundingClientRect()
   const x = bounds.left + bounds.width / 2
   const y = bounds.top + bounds.height / 2
   const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 1
-  const clip = (value: number) => root.style.setProperty('--theme-reveal-clip', `circle(${value}px at ${x}px ${y}px)`)
 
-  clip(0)
   root.dataset.themeReveal = ''
   const transition = document.startViewTransition(() => flushSync(update))
-  active = transition
-
-  const clear = () => {
-    delete root.dataset.themeReveal
-    root.style.removeProperty('--theme-reveal-clip')
-    active = undefined
-  }
+  const clear = () => { delete root.dataset.themeReveal }
 
   void transition.ready.then(() => {
-    // Keep the native snapshots alive while Motion drives the mask radius.
-    const hold = root.animate([{ opacity: 1 }, { opacity: 1 }], {
-      duration: 1000, iterations: Infinity, pseudoElement: '::view-transition-group(root)',
+    // Animate the snapshot directly so there is no inherited style update on each frame.
+    root.animate({
+      clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
+    }, {
+      duration: 420,
+      easing: 'cubic-bezier(.22, 1, .36, 1)',
+      pseudoElement: '::view-transition-new(root)',
     })
-    const animation = animate(0, radius, { ...reveal, onUpdate: clip, onComplete: () => hold.cancel() })
-    const stop = () => { animation.stop(); hold.cancel() }
-    void transition.finished.then(stop, stop)
   }).catch(() => transition.skipTransition())
   void transition.finished.then(clear, clear)
 }

@@ -4,9 +4,9 @@
   padding-inline: var(--gutter);
 }
 
-@mixin panel {
+@mixin panel($border: 1px solid var(--border)) {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: $border;
   border-radius: var(--r-md);
 }
 
@@ -78,39 +78,6 @@
   border-radius: var(--r-sm);
   width: 44px;
   height: 44px;
-}
-
-.search {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  min-height: 49px;
-  padding: 0 14px;
-  color: var(--brand);
-  background: var(--input);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-
-  svg { flex: none; }
-
-  input {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-    min-height: 46px;
-    color: var(--text);
-    border: 0;
-    outline: 0;
-    background: transparent;
-
-    &::placeholder { color: var(--muted); }
-  }
-
-  &:focus-within {
-    border-color: var(--focus);
-    outline: 2px solid var(--brand-soft);
-  }
 }
 
 .filters {
@@ -188,8 +155,7 @@
 .gameGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .siteGrid, .collectionGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
-.siteRow, .indexItem {
-  @include panel;
+.directoryCard, .indexItem {
   @include interactive;
 
   display: flex;
@@ -200,11 +166,13 @@
   line-height: 1.32;
 }
 
-.siteSearchResult {
-  &, .logo { border: 0; }
+.directoryCard {
+  @include panel(0);
+
+  &:not(.compact) .logo { border: 0; }
 }
 
-.siteCopy, .indexItem > div {
+.directoryCopy, .indexItem > div {
   display: grid;
   min-width: 0;
   gap: 3px;
@@ -232,7 +200,7 @@
   gap: 8px;
   min-height: 31px;
   padding: 3px 5px;
-  border-color: transparent;
+  border: 1px solid transparent;
   background: transparent;
   border-radius: var(--r-sm);
 
@@ -241,8 +209,6 @@
     height: 24px;
     border-radius: 5px;
   }
-
-  .rowArrow { display: none; }
 }
 
 .media {
@@ -633,6 +599,8 @@
 }
 
 .indexItem {
+  @include panel;
+
   padding: 13px;
 
   svg { flex: none; color: var(--brand); }
