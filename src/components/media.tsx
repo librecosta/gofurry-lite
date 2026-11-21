@@ -6,7 +6,7 @@ import styles from './site.module.scss'
 
 /* Static export serves archived logos and official game media without an image server. */
 export function Media({ src, label, kind = 'cover', eager = false, revealOnLoad = false, noScriptSrc }: {
-  src?: string; label?: string; kind?: 'cover' | 'logo' | 'shot'; eager?: boolean; revealOnLoad?: boolean; noScriptSrc?: string
+  src?: string; label?: string; kind?: 'cover' | 'logo'; eager?: boolean; revealOnLoad?: boolean; noScriptSrc?: string
 }) {
   const [failedSource, setFailedSource] = useState<string>()
   const [loadedSource, setLoadedSource] = useState<string>()
@@ -17,7 +17,7 @@ export function Media({ src, label, kind = 'cover', eager = false, revealOnLoad 
     else if (revealOnLoad) setLoadedSource(src)
   }, [src, revealOnLoad])
   return <span className={styles.media + ' ' + styles[kind]}>
-    <span className={styles.mediaFallback} aria-hidden="true"><Icon name={kind === 'logo' ? 'globe' : kind === 'cover' ? 'game' : 'image'} size={kind === 'logo' ? 21 : 29} /></span>
+    <span className={styles.mediaFallback} aria-hidden="true"><Icon name={kind === 'logo' ? 'globe' : 'game'} size={kind === 'logo' ? 21 : 29} /></span>
     {noScriptSrc && <noscript>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={noScriptSrc} alt={label ?? ''} loading="lazy" />

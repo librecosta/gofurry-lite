@@ -261,7 +261,6 @@
   img { object-fit: contain; }
 }
 .cover { aspect-ratio: 460 / 215; }
-.shot { aspect-ratio: 16 / 9; }
 
 .mediaFallback {
   display: flex;
@@ -600,19 +599,6 @@
 .readingPanel .readable { margin-top: 19px; }
 .related { margin-top: 22px; }
 
-.shots {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-
-  a {
-    display: block;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    overflow: hidden;
-  }
-}
-
 .timeline {
   display: grid;
   gap: 8px;
@@ -676,7 +662,6 @@
     padding: 8px;
   }
 
-  .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (width <= 350px) {

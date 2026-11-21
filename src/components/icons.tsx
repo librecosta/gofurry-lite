@@ -11,9 +11,11 @@ import { ImageIcon } from '@phosphor-icons/react/dist/ssr/Image'
 import { ListIcon } from '@phosphor-icons/react/dist/ssr/List'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass'
 import { MoonIcon } from '@phosphor-icons/react/dist/ssr/Moon'
+import { PlayIcon } from '@phosphor-icons/react/dist/ssr/Play'
 import { ShieldCheckIcon } from '@phosphor-icons/react/dist/ssr/ShieldCheck'
 import { ShieldWarningIcon } from '@phosphor-icons/react/dist/ssr/ShieldWarning'
 import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/ssr/SlidersHorizontal'
+import { ArrowsOutIcon } from '@phosphor-icons/react/dist/ssr/ArrowsOut'
 import { StackIcon } from '@phosphor-icons/react/dist/ssr/Stack'
 import { SteamLogoIcon } from '@phosphor-icons/react/dist/ssr/SteamLogo'
 import { SunIcon } from '@phosphor-icons/react/dist/ssr/Sun'
@@ -24,6 +26,8 @@ import { XLogoIcon } from '@phosphor-icons/react/dist/ssr/XLogo'
 const glyphs = {
   search: MagnifyingGlassIcon,
   image: ImageIcon,
+  play: PlayIcon,
+  expand: ArrowsOutIcon,
   game: GameControllerIcon,
   filter: SlidersHorizontalIcon,
   layers: StackIcon,

@@ -7,6 +7,7 @@ import { gameCover, href, inCategory, labels, localized, ordered, steamStore } f
 import type { Collection, Directory, Game, GameCardData, Locale, Site, Tag, View } from '../lib/presentation'
 import { Breadcrumb, Section, TextLink, Title, t } from './elements'
 import { Filter } from './filter'
+import { GameGallery } from './game-gallery'
 import { HomeCategories, HomeLead } from './home-directory'
 import { useHomeGameRotation } from './home-game-rotation'
 import { Icon } from './icons'
@@ -311,11 +312,7 @@ function GameDetail({ game, locale, directory }: { game: Game } & ModeProps) {
       <div className={styles.detailSplit}>
         <div>
           {(longText || description) && <section><h2>{t(locale, '游戏介绍', 'About the game')}</h2><PlainBody value={longText || description} /></section>}
-          {game.screenshots.length > 0 && <section className={styles.related}>
-            <h2>{t(locale, '游戏截图', 'Screenshots')}</h2>
-            <div className={styles.shots}>{game.screenshots.map((url, i) => <a key={url} href={url} target="_blank" rel="noopener noreferrer"
-              aria-label={t(locale, '打开截图 ', 'Open screenshot ') + (i + 1)}><Media kind="shot" src={url} /></a>)}</div>
-          </section>}
+          <GameGallery key={game.id} screenshots={game.screenshots} movies={game.movies} locale={locale} />
         </div>
         <aside className={styles.facts}>
           <h2>{t(locale, '游戏资料', 'Game information')}</h2>

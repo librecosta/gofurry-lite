@@ -16,6 +16,8 @@ STEAM_CDN = {
     'shared.akamai.steamstatic.com', 'shared.fastly.steamstatic.com',
     'shared.steamstatic.com', 'store.akamai.steamstatic.com',
 }
+MOVIE_POLICY = json.loads((ROOT/'scripts/steam-movie-policy.json').read_text(encoding='utf-8'))
+MOVIE_FORMATS = ('mp4', 'webm', 'dash', 'hls')
 
 
 def write(path, data):
@@ -97,6 +99,107 @@ def official_media(url, app_id):
     if not re.fullmatch(r'/(?:store_item_assets/)?steam/apps/' + str(app_id) + r'/[\w/.-]+\.(?:png|jpg|jpeg|webp)', value.path):
         return None
     return f'https://{value.hostname}{value.path}'
+
+
+def steam_movie_url(url, app_id, media_key, kind):
+    if not url or not re.fullmatch(r'https://[!-~]+', url):
+        return None
+    try:
+        value = urlsplit(url)
+    except ValueError:
+        return None
+    prefix = 'thumbnail' if kind == 'thumbnail' else 'video'
+    extension = {'dash': 'mpd', 'hls': 'm3u8'}.get(kind, kind)
+    if (value.netloc not in MOVIE_POLICY[prefix + 'Hosts'] or '#' in url or
+            (value.query and not re.fullmatch(r't=[0-9]+', value.query))):
+        return None
+    pattern = (MOVIE_POLICY[prefix + 'Path'].replace('{appId}', str(app_id))
+               .replace('{mediaKey}', media_key).replace('{format}', extension))
+    if re.fullmatch(pattern, value.path):
+        return f'https://{value.netloc}{value.path}'
+    return None
+
+
+def recover_movies(assets, legacy_media, catalog_app_ids):
+    grouped = defaultdict(list)
+    for asset in assets:
+        if asset['asset_family'] == 'movie':
+            grouped[int(asset['game_id']), asset['media_key']].append(asset)
+    for media in legacy_media:
+        if media['media_type'] == 'movie':
+            grouped[int(media['game_id']), media['media_key']].append(media)
+
+    def sort_order(variants):
+        first = min(variants, key=lambda row: ('asset_type' not in row, int(row['sort_order'])))
+        return int(first['sort_order'])
+
+    recovered = defaultdict(list)
+    audit = []
+    for (game_id, key), variants in sorted(grouped.items(), key=lambda entry: (
+            entry[0][0], sort_order(entry[1]), entry[0][1])):
+        assert re.fullmatch(r'[1-9][0-9]*', key), (game_id, key)
+        asset_rows = sorted((row for row in variants if 'asset_type' in row), key=lambda row: int(row['id']))
+        media_rows = [row for row in variants if 'media_type' in row]
+        app_id = catalog_app_ids.get(game_id, int(variants[0]['appid']))
+        assert all(int(row['appid']) == app_id for row in variants), (game_id, key)
+        title = next((row['title'].strip() for row in asset_rows + media_rows if (row['title'] or '').strip()), '')
+        order = sort_order(variants)
+        choices = defaultdict(list)
+        rejected = set()
+
+        def record(url, kind, priority):
+            if address := steam_movie_url(url, app_id, key, kind):
+                choices[kind].append((priority, address))
+
+        for row in asset_rows:
+            _, _, variant = row['asset_type'].partition('_')
+            kind = variant.split('_', 1)[0]
+            if kind not in (*MOVIE_FORMATS, 'thumbnail'):
+                continue
+            status = int(row['status_code'] or 0)
+            if row['exists'] != 't' or (status and not 200 <= status < 300):
+                rejected.add(steam_movie_url(row['url'], app_id, key, kind))
+                continue
+            record(row['url'], kind, 0 if row['asset_type'].endswith('_max') else 2)
+            record(row['thumbnail_url'], 'thumbnail', 2)
+        for row in media_rows:
+            extra = json.loads(row['extra'] or '{}')
+            record(row['thumbnail_url'], 'thumbnail', 3)
+            for kind in MOVIE_FORMATS:
+                record(row['url'], kind, 5)
+            if str(extra.get('id', key)) != key:
+                continue
+            record(extra.get('thumbnail_url'), 'thumbnail', 3)
+            for kind in ('mp4', 'webm'):
+                record(extra.get(f'{kind}_max_url'), kind, 1)
+                record(extra.get(f'{kind}_480_url'), kind, 3)
+            for name in ('dash_av1', 'dash_h264', 'hls_h264'):
+                record(extra.get(f'{name}_url'), name.split('_')[0], 3)
+
+        urls = {kind: list(dict.fromkeys(address for _, address in sorted(options) if address not in rejected))
+                for kind, options in choices.items()}
+        formats = [kind for kind in MOVIE_FORMATS if urls.get(kind)]
+        poster = next(iter(urls.get('thumbnail', [])), None)
+        native = {kind: urls[kind][0] for kind in ('mp4', 'webm') if urls.get(kind)}
+        if game_id not in catalog_app_ids:
+            disposition = 'outside-publication'
+        elif native and poster:
+            disposition = 'recovered'
+            recovered[game_id].append({'id': key, 'title': title, 'thumbnail': poster, **native})
+        elif native:
+            disposition = 'no-verified-thumbnail'
+        elif 'hls' in formats or 'dash' in formats:
+            disposition = 'streaming-only'
+        else:
+            disposition = 'no-verified-source'
+        audit.append({
+            'gameId': game_id, 'appId': app_id, 'mediaKey': key, 'title': title, 'sortOrder': order,
+            'formats': formats, 'urls': urls, 'disposition': disposition,
+            'assetEvidence': [{'assetType': row['asset_type'], 'exists': row['exists'] == 't',
+                               'statusCode': int(row['status_code'] or 0), 'checkedAt': row['checked_at']}
+                              for row in asset_rows],
+        })
+    return recovered, audit
 
 
 def release_text(record):
@@ -258,8 +361,19 @@ def main(work):
 
     details = {int(r['game_id']):r for r in rows(work,'gfg_game_details') if r['source']=='steam'}
     localizations = {(int(r['game_id']),r['lang']):r for r in rows(work,'gfg_game_localized_details')}
+    game_assets = rows(work, 'gfg_game_assets')
+    movies, movie_audit = recover_movies(game_assets, rows(work, 'gfg_game_media'), {
+        i: int(row['candidate']['steam_appid']) for i, row in game_rows.items()
+    })
+    movie_totals = {
+        'gamesWithMovies': len({row['gameId'] for row in movie_audit}),
+        'movies': len(movie_audit),
+        'formats': dict(Counter(kind for row in movie_audit for kind in row['formats'])),
+        'dispositions': dict(Counter(row['disposition'] for row in movie_audit)),
+    }
+    print('Legacy game movies', movie_totals)
     media = defaultdict(list)
-    for row in rows(work,'gfg_game_assets'):
+    for row in game_assets:
         if row['exists']=='t' and row['asset_type'] in ('header','screenshot_full'):
             media[int(row['game_id'])].append(row)
     releases = {r['raw']['game_id']:r['raw'] for r in source('game_release_candidates')}
@@ -287,6 +401,7 @@ def main(work):
             'id':i, 'appId':app_id, **copy(row), 'body':body, 'rating':game_ratings[i],
             'developers': row['developers'] or [], 'publishers': row['publishers'] or [],
             'platforms':platforms, 'screenshots':screenshots[:6],
+            **({'movies':movies[i]} if i in movies else {}),
             **({'cover':header_candidates[0]} if header_candidates else {}),
             **release_text(releases.get(i)),
             'tags':sorted((t for t in membership[i] if t['id'] in tag_ids),key=lambda t:(t['role']!='primary',t['id'])),
@@ -346,6 +461,7 @@ def main(work):
         'fullCollectionMembers':{c['code']:sorted(all_collection_members[c['id']]) for c in collections},
         'publicLogoObjects':len(public_logos),'sourceLogoObjects':len(assets),
     })
+    write(work/'movie-audit.json', {'backupSha256': BACKUP, **movie_totals, 'records': movie_audit})
     print('V1 publication totals', {k:len(v) for k,v in catalog.items()}, 'public logo objects',len(public_logos))
     print('Collections', {r['code']:(len(all_collection_members[r['id']]),len(r['members'])) for r in collections})
     print('Verified game media',sum(bool(r.get('cover')) for r in games),sum(len(r['screenshots']) for r in games))

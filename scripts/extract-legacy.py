@@ -14,7 +14,7 @@ ARCHIVES = {
 SECTIONS = {
     'gfn': ('gfn_site', 'gfn_site_group_map', 'gfn_nav_update_notice',
             'gfn_collector_domain', 'gfn_site_primary_target_periods', 'gfn_target_tracking_periods'),
-    'gfg': ('gfg_game', 'gfg_game_details', 'gfg_game_localized_details', 'gfg_game_assets'),
+    'gfg': ('gfg_game', 'gfg_game_details', 'gfg_game_localized_details', 'gfg_game_assets', 'gfg_game_media'),
 }
 
 

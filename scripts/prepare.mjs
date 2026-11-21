@@ -6,9 +6,10 @@ const root = new URL('../', import.meta.url)
 const file = (path) => new URL(path, root)
 const json = async (path) => JSON.parse(await readFile(file(path), 'utf8'))
 
-const [catalog, approved, publication, ratings, links] = await Promise.all([
+const [catalog, approved, publication, ratings, links, moviePolicy] = await Promise.all([
   json('content/catalog/catalog.json'), json('content/curation/site-categories.json'),
   json('content/curation/publication.json'), json('content/curation/content-ratings.json'), json('content/curation/site-link-review.json'),
+  json('scripts/steam-movie-policy.json'),
 ])
 const codes = ['community', 'gallery', 'literature', 'resources', 'marketplace', 'knowledge', 'gaming', 'events']
 const counts = { sites: 225, games: 261, groups: 12, tags: 214, collections: 16, updates: 31 }
@@ -81,6 +82,17 @@ for (const group of catalog.groups) {
   assert.equal(new Set(group.members).size, group.members.length)
   assert(group.members.every((id) => sitesById.get(id)?.groups.includes(group.id)))
 }
+
+function verifyMovieURL(address, appId, mediaKey, kind) {
+  const field = kind === 'thumbnail' ? 'thumbnail' : 'video'
+  const url = new URL(address)
+  assert(url.protocol === 'https:' && moviePolicy[field + 'Hosts'].includes(url.host))
+  assert.equal(address, url.origin + url.pathname)
+  const pattern = moviePolicy[field + 'Path'].replace('{appId}', String(appId))
+    .replace('{mediaKey}', mediaKey).replace('{format}', kind)
+  assert.match(url.pathname, new RegExp('^' + pattern + '$'))
+}
+
 for (const game of catalog.games) {
   assert(game.title.zh || game.title.en, game.id)
   assert(Number.isSafeInteger(game.appId) && game.appId > 0)
@@ -94,6 +106,18 @@ for (const game of catalog.games) {
     const url = new URL(address)
     assert(url.protocol === 'https:' && url.hostname.endsWith('.steamstatic.com'))
     assert.match(url.pathname, new RegExp('/steam/apps/' + game.appId + '/'))
+  }
+  const movies = game.movies ?? []
+  assert(Array.isArray(movies))
+  assert.equal(new Set(movies.map(({ id }) => id)).size, movies.length)
+  for (const movie of movies) {
+    assert(Object.keys(movie).every((key) => ['id', 'title', 'thumbnail', 'mp4', 'webm'].includes(key)))
+    assert(typeof movie.id === 'string' && /^[1-9][0-9]*$/.test(movie.id))
+    assert(typeof movie.title === 'string' && movie.title === movie.title.trim())
+    assert(movie.mp4 || movie.webm)
+    verifyMovieURL(movie.thumbnail, game.appId, movie.id, 'thumbnail')
+    if ('mp4' in movie) verifyMovieURL(movie.mp4, game.appId, movie.id, 'mp4')
+    if ('webm' in movie) verifyMovieURL(movie.webm, game.appId, movie.id, 'webm')
   }
 }
 assert.equal(catalog.sites.filter((site) => site.legacyNsfw === 1).length, 28)

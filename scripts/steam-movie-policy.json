@@ -1,0 +1,6 @@
+{
+  "thumbnailHosts": ["shared.akamai.steamstatic.com", "shared.fastly.steamstatic.com", "shared.steamstatic.com"],
+  "videoHosts": ["video.akamai.steamstatic.com", "video.fastly.steamstatic.com", "cdn.akamai.steamstatic.com", "cdn.cloudflare.steamstatic.com"],
+  "thumbnailPath": "/(?:store_item_assets/)?steam/apps/{mediaKey}/(?:[a-f0-9]{40}/)?movie(?:\\.[0-9]+x[0-9]+|_[0-9]+x[0-9]+)?\\.jpg",
+  "videoPath": "/(?:store_trailers/{appId}/[1-9][0-9]*/[a-f0-9]{40}/[1-9][0-9]*/[a-zA-Z0-9_-]+|(?:store_item_assets/)?steam/apps/{mediaKey}/(?:[a-f0-9]{40}/)?movie(?:480|_480|_max)?)\\.{format}"
+}

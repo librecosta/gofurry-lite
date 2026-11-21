@@ -10,8 +10,10 @@ export type Site = Copy & { id: number; rating: Rating; groups: number[]; logo?:
 export type DirectorySite = Site & { category: Classification }
 export type Group = Copy & { id: number; members: number[] }
 export type GameCardData = Copy & { id: number; rating: Rating; appId: number; cover?: string; tags: { id: number; role: string }[] }
+export type GameMovie = { id: string; title: string; thumbnail: string; mp4?: string; webm?: string }
 export type Game = GameCardData & {
-  body: Translation; developers: string[]; publishers: string[]; platforms: string[]; screenshots: string[]; release?: string
+  body: Translation; developers: string[]; publishers: string[]; platforms: string[]; screenshots: string[]
+  movies?: GameMovie[]; release?: string
 }
 export type Tag = { id: number; code: string; category: string; title: Translation }
 export type Collection = Copy & { id: number; code: string; members: number[] }
