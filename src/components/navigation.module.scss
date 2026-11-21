@@ -1,0 +1,268 @@
+
+.header,
+.dock {
+  background: var(--nav-surface);
+  backdrop-filter: blur(12px);
+}
+
+.header {
+  position: sticky;
+  z-index: 20;
+  inset-block-start: 0;
+}
+
+.headerInner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: min(100%, var(--content));
+  min-height: 64px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  gap: 10px;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+/* The two artworks share the same vertical SVG coordinates and text baseline. */
+.wordmarkArtwork,
+.wordmarkLite { height: 34.5px; }
+
+.wordmarkArtwork {
+  aspect-ratio: 4;
+
+  /* The transparent gap in the artwork falls between its symbol and wordmark. */
+  background: linear-gradient(to right, #8b94a1 36.5%, var(--text) 36.5%);
+  mask: url("/media/brand/gofurry-horizontal.svg") center / contain no-repeat;
+}
+
+.wordmarkLite {
+  aspect-ratio: 210 / 192;
+  background: var(--brand);
+  mask: url("/media/brand/gofurry-lite-suffix.svg") center / contain no-repeat;
+}
+
+.desktopNav {
+  display: flex;
+  align-items: center;
+  gap: clamp(2px, calc(2vw - 10px), 14px);
+}
+
+.headerAction,
+.menuTrigger {
+  --nav-hover: 0;
+  --nav-ink: var(--muted);
+
+  display: inline-grid;
+  place-items: center;
+  min-width: 38px;
+  min-height: 40px;
+  padding-inline: 9px;
+  color: color-mix(in srgb, var(--nav-hover-ink) calc(var(--nav-hover) * 100%), var(--nav-ink));
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: .9rem;
+  font-weight: 720;
+  white-space: nowrap;
+
+  &[aria-current], &[aria-expanded="true"] { --nav-ink: var(--brand); }
+  &:disabled { cursor: default; }
+}
+
+.themeAction {
+  --nav-button-fill: 0;
+
+  background-color: color-mix(in srgb, var(--nav-button-hover) calc(var(--nav-button-fill) * 100%), transparent);
+}
+
+.modeSwitch {
+  --mode-width: 74px;
+  --mode-border: 2px;
+  --mode-inset: 3px;
+  --mode-thumb-size: 16px;
+  --mode-thumb-edge: calc(var(--mode-inset) + var(--mode-thumb-size));
+  --mode-travel: calc(var(--mode-width) - 2 * var(--mode-border) - 2 * var(--mode-inset) - var(--mode-thumb-size));
+
+  display: inline-grid;
+  flex: none;
+  width: var(--mode-width);
+  min-height: 40px;
+  margin: 0 4px 0 0;
+  padding: 0;
+  color: var(--text);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  place-items: center;
+
+  &:disabled { cursor: default; }
+}
+
+.modeTrack {
+  --mode-accent: 0;
+  --mode-ink: color-mix(in srgb, var(--mode-on) calc(var(--mode-accent) * 100%), var(--mode-off));
+
+  position: relative;
+  width: 100%;
+  height: 26px;
+  border: var(--mode-border) solid var(--mode-ink);
+  border-radius: 99px;
+  background-color: color-mix(in srgb, var(--mode-wash) calc(var(--mode-accent) * 100%), transparent);
+  pointer-events: none;
+}
+
+.modeLabel {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: var(--mode-thumb-edge) 0;
+  display: grid;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1;
+  place-items: center;
+
+  &[data-mode-label="nsfw"] {
+    inset-inline: 0 var(--mode-thumb-edge);
+    color: var(--mode-on);
+  }
+}
+
+.modeThumb {
+  position: absolute;
+  inset: 50% auto auto var(--mode-inset);
+  width: var(--mode-thumb-size);
+  height: var(--mode-thumb-size);
+  border-radius: 50%;
+  background: var(--mode-ink);
+  transform: translateX(calc(var(--mode-travel) * var(--mode-thumb-position, 0)));
+  translate: 0 -50%;
+}
+
+.mobileControls,
+.mobileMenu,
+.dock {
+  display: none;
+}
+
+@media (width < 768px) {
+  .header {
+    position: relative;
+    padding-block-start: env(safe-area-inset-top, 0);
+  }
+
+  .headerInner { gap: 4px; }
+  .desktopNav { display: none; }
+
+  .mobileControls {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+
+    .modeSwitch { margin: 0; }
+    .menuTrigger { min-width: 34px; padding-inline: 4px; }
+  }
+
+  .mobileMenu {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline: 0;
+    display: block;
+    overflow: clip;
+    background: light-dark(var(--guide-surface), var(--input));
+    box-shadow: 0 8px 20px rgb(12 14 18 / 10%);
+  }
+
+  .mobileMenuLinks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px var(--gutter) 16px;
+    gap: 0 clamp(3px, 1.4vw, 12px);
+
+    .headerAction {
+      display: inline-flex;
+      justify-content: center;
+      min-width: 32px;
+      padding-inline: 5px;
+
+      &:focus-visible { outline-offset: -2px; }
+    }
+  }
+
+  .menuExternal { gap: 5px; }
+
+  .dock {
+    --item-width: clamp(44px, 11vw, 52px);
+    --dock-edge: max(8px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    --label-width: clamp(0px, calc(100vw - 3 * var(--item-width) - 16px - 2 * var(--dock-edge)), 74px);
+
+    position: fixed;
+    z-index: 30;
+    inset-inline: 0;
+    inset-block-end: var(--dock-bottom);
+    display: flex;
+    align-items: center;
+    inline-size: max-content;
+    max-inline-size: calc(100vw - 2 * var(--dock-edge));
+    margin-inline: auto;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow);
+    gap: 2px;
+
+    &[inert] { pointer-events: none; }
+  }
+
+  /* The icon keeps its own column while the label and highlight slide into view. */
+  .dockItem {
+    --nav-emphasis: 0;
+    --dock-active: 0;
+
+    position: relative;
+    display: flex;
+    isolation: isolate;
+    align-items: center;
+    flex: 0 1 auto;
+    inline-size: calc(var(--item-width) + var(--label-width) * var(--dock-expansion, 0));
+    min-inline-size: var(--item-width);
+    block-size: 44px;
+    padding: 0;
+    overflow: hidden;
+    color: color-mix(in srgb, var(--brand) calc(var(--nav-emphasis) * 100%), var(--text));
+    border: 0;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--brand-soft) calc(var(--dock-active) * 100%), transparent);
+    text-align: start;
+  }
+
+  .dockHighlight {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--surface-hover);
+    pointer-events: none;
+  }
+
+  .dockIcon {
+    display: grid;
+    flex: 0 0 var(--item-width);
+    place-items: center;
+    pointer-events: none;
+  }
+
+  .dockLabel {
+    padding-inline-end: 3px;
+    font-size: .7rem;
+    font-weight: 770;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}

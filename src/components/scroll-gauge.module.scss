@@ -1,0 +1,53 @@
+.gauge {
+  position: fixed;
+  z-index: 25;
+  inset-inline-end: max(5px, calc(env(safe-area-inset-right, 0px) + 4px));
+  inset-block-end: max(18px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+  width: 28px;
+  height: clamp(62px, 12svh, 99px);
+  border-radius: var(--r-sm);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+
+  &[data-dragging] { cursor: grabbing; }
+  &:focus-visible { outline-offset: 0; }
+}
+
+.track {
+  position: absolute;
+  inset: 8px 7px 8px auto;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--border-strong);
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--brand);
+  transform-origin: top;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  inset-inline-end: calc(100% + 4px);
+  min-width: 29px;
+  padding: 2px 3px;
+  color: var(--muted);
+  border-radius: var(--r-sm);
+  background: var(--nav-surface);
+  font-size: .64rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  text-align: end;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+@media (width < 768px) {
+  .gauge { inset-block-end: calc(var(--dock-bottom) + 60px); }
+}

@@ -1,0 +1,93 @@
+/* Semantic roles translated from the archived GoFurry tokens.less. */
+@mixin dark {
+  color-scheme: dark;
+
+  --canvas: #1d1f22;
+  --surface: rgb(229 231 235 / 8%);
+  --surface-strong: rgb(229 231 235 / 14%);
+  --surface-hover: rgb(229 231 235 / 16%);
+  --guide-surface: #292f34;
+  --footer-surface: #342a25;
+  --copyright-surface: #271f1b;
+  --footer-ink: #e7d9ce;
+  --footer-hover-ink: #ffbb91;
+  --footer-icon-surface: #4c3a30;
+  --footer-icon-hover: #6b4b3a;
+  --nav-surface: rgb(40 42 45 / 78%);
+  --nav-hover-ink: #ffd5b8;
+  --nav-button-hover: rgb(253 186 140 / 19%);
+  --mode-off: #98a2ad;
+  --mode-on: #9dc4aa;
+  --mode-wash: rgb(157 196 170 / 16%);
+  --border: rgb(226 232 240 / 18%);
+  --border-strong: rgb(226 232 240 / 28%);
+  --text: rgb(248 250 252 / 94%);
+  --muted: rgb(203 213 225 / 76%);
+  --brand: #fdba8c;
+  --brand-soft: rgb(249 115 22 / 15%);
+  --action: #fdba8c;
+  --action-hover: #fed7aa;
+  --action-text: #29180e;
+  --input: #26282c;
+  --dot: rgb(193 197 203 / 18%);
+  --dot-medium: rgb(193 197 203 / 12%);
+  --dot-small: rgb(193 197 203 / 8%);
+  --shadow: 0 18px 44px rgb(0 0 0 / 28%);
+}
+
+:root {
+  color-scheme: light;
+
+  --font: "Manrope Variable", "Noto Sans SC Variable", system-ui, "Microsoft YaHei", sans-serif;
+  --font-mono: "Cascadia Mono", consolas, ui-monospace, monospace;
+  --canvas: #f2e3d0;
+  --surface: rgb(255 250 242 / 72%);
+  --surface-strong: rgb(255 250 242 / 88%);
+  --surface-hover: rgb(255 239 213 / 72%);
+  --guide-surface: #fbf4e9;
+  --footer-surface: #e4c7b0;
+  --copyright-surface: #d9b79d;
+  --footer-ink: #4d3225;
+  --footer-hover-ink: #7a260f;
+  --footer-icon-surface: #f3ddca;
+  --footer-icon-hover: #f1c4a5;
+  --nav-surface: rgb(255 250 242 / 78%);
+  --nav-hover-ink: #a73c10;
+  --nav-button-hover: rgb(160 74 24 / 16%);
+  --mode-off: #79746e;
+  --mode-on: #477456;
+  --mode-wash: rgb(71 116 86 / 12%);
+  --border: rgb(126 92 58 / 16%);
+  --border-strong: rgb(126 92 58 / 24%);
+  --text: rgb(28 25 23 / 94%);
+  --muted: #63564d;
+  --brand: #873717;
+  --brand-soft: rgb(249 115 22 / 14%);
+  --action: #873717;
+  --action-hover: #63270f;
+  --action-text: #fffaf2;
+  --input: rgb(255 250 242 / 91%);
+  --dot: rgb(88 97 107 / 20%);
+  --dot-medium: rgb(88 97 107 / 13%);
+  --dot-small: rgb(88 97 107 / 10%);
+  --shadow: 0 18px 44px rgb(126 92 58 / 12%);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --focus: #cb5c25;
+  --gutter: clamp(14px, 4vw, 46px);
+  --content: 1360px;
+  --motion: 160ms;
+  --dock-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+  --dock-clearance: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  @include dark;
+}

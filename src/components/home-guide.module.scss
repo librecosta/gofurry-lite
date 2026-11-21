@@ -1,0 +1,31 @@
+.guide {
+  padding-block: clamp(40px, 6vw, 76px);
+  padding-inline: max(var(--gutter), calc((100% - 1060px) / 2));
+  color: var(--text);
+  background: var(--guide-surface);
+  overflow-wrap: anywhere;
+
+  h2 { font-size: clamp(1.45rem, 3vw, 2rem); }
+  h3 { font-size: clamp(1.08rem, 2vw, 1.28rem); }
+  h4 { font-size: 1rem; }
+
+  p {
+    color: var(--muted);
+    line-height: 1.75;
+  }
+
+  a {
+    color: var(--brand);
+    text-decoration: underline;
+    text-underline-offset: .18em;
+  }
+}
+
+.prose {
+  max-inline-size: 74ch;
+
+  > * { margin: 0; }
+  > * + * { margin-block-start: 1em; }
+  > h3 { margin-block-start: 1.8em; }
+  > h4 + p { margin-block-start: .4em; }
+}

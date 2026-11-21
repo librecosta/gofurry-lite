@@ -1,0 +1,108 @@
+.floatingSearch {
+  --search-height: 60px;
+
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  min-height: var(--search-height);
+  padding-inline: 14px 10px;
+  border-radius: var(--r-md);
+  background: var(--input);
+  color: var(--brand);
+
+  input {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--search-height);
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 16px;
+
+    &::-webkit-search-cancel-button { display: none; }
+  }
+}
+
+.searchOutline {
+  position: absolute;
+  z-index: -1;
+  inset: -.5em 0 0;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 37px;
+  border: 2px solid transparent;
+  border-radius: inherit;
+  pointer-events: none;
+  font-size: .8rem;
+  font-weight: 750;
+  line-height: 1;
+  transition: border-color 420ms cubic-bezier(.2, .8, .2, 1);
+
+  legend {
+    max-inline-size: 0;
+    padding: 0;
+    overflow: hidden;
+    color: transparent;
+    white-space: nowrap;
+    transition: max-inline-size 220ms ease-out, padding-inline 180ms ease-out;
+  }
+}
+
+.floatingLabel {
+  position: absolute;
+  inset-inline-start: 46px;
+  inset-block-start: calc(var(--search-height) / 2);
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: .98rem;
+  font-weight: 750;
+  line-height: 1;
+  cursor: text;
+  white-space: nowrap;
+
+  > span[aria-hidden] { display: flex; align-items: center; }
+
+  > span[aria-hidden] > span {
+    display: inline-block;
+    white-space: pre;
+    transition: transform 220ms cubic-bezier(.2, .7, .25, 1), font-size 220ms ease-out, color var(--motion);
+    transition-delay: calc(var(--character) * 7ms);
+  }
+}
+
+.floatingSearch:focus-within .searchOutline { border-color: var(--focus); }
+
+.floatingSearch:is(:focus-within, [data-filled]) {
+  .searchOutline legend {
+    max-inline-size: 100%;
+    padding-inline: 6px;
+  }
+
+  .floatingLabel > span[aria-hidden] > span {
+    color: var(--brand);
+    font-size: .8rem;
+    transform: translateY(calc(var(--search-height) / -2));
+  }
+}
+
+.clearSearch {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floatingLabel > span[aria-hidden] > span { transition-delay: 0s; }
+}
