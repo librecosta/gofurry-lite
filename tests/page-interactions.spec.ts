@@ -1,4 +1,6 @@
 import { test, expect, type Locator } from '@playwright/test'
+import { categories } from '../src/lib/categories'
+import { href } from '../src/lib/presentation'
 
 async function revealFrames(button: Locator) {
   return button.evaluateHandle((element) => {
@@ -204,7 +206,7 @@ test('mobile bottom bands span the viewport and the copyright follows the curren
   const footer = page.getByRole('contentinfo')
   const footerBands = footer.locator(':scope > div')
   await expect(footerBands).toHaveCount(2)
-  const guide = page.getByRole('region', { name: 'A guide to GoFurry Lite' })
+  const guide = page.getByRole('region', { name: 'Discover the Furry Web with GoFurry Lite' })
   const colors = []
   for (const band of [guide, footerBands.first(), footerBands.last()]) {
     const bounds = (await band.boundingBox())!
@@ -244,22 +246,38 @@ test('mobile bottom bands span the viewport and the copyright follows the curren
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
-test('Chinese and English home guide headings and prose are available with JavaScript disabled', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, javaScriptEnabled: false })
+test('Chinese and English home guides render complete prose and localized links without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false, viewport: { width: 320, height: 700 } })
   try {
     const page = await context.newPage()
     await page.route(/steamstatic\.com/, (route) => route.abort())
-    for (const [path, name] of [['/zh', 'GoFurry Lite 导览'], ['/', 'A guide to GoFurry Lite']]) {
-      await page.goto(path)
+    const guidePages = [
+      ['en', 'en', 'Discover furry websites', 'Discover the Furry Web with GoFurry Lite', 'There is always another corner to discover'],
+      ['zh', 'zh-CN', '发现值得探索的兽圈网站', '从 GoFurry Lite 开始，探索更广阔的兽圈互联网', '让更多值得探索的角落被看见'],
+    ] as const
+    for (const [locale, lang, homeTitle, name, lastHeading] of guidePages) {
+      await page.goto(href(locale))
+      await expect(page.locator('html')).toHaveAttribute('lang', lang)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(homeTitle)
       const guide = page.getByRole('region', { name })
       await expect(guide.getByRole('heading', { name, level: 2 })).toBeVisible()
-      await expect(guide.getByRole('heading', { level: 3 })).toHaveCount(4)
-      await expect(guide.getByRole('listitem')).toHaveCount(8)
-      expect((await guide.innerText()).length).toBeGreaterThan(800)
-      expect(await guide.evaluate((element) => element.getBoundingClientRect().width)).toBe(await page.evaluate(() => innerWidth))
+      await expect(guide.getByRole('heading', { level: 3 })).toHaveCount(12)
+      await expect(guide.getByRole('heading', { level: 3 }).last()).toHaveText(lastHeading)
+      await expect(guide.getByRole('heading', { level: 4 })).toHaveCount(6)
+      await expect(page.locator('main:has(> section[aria-labelledby="home-guide"]:last-child) + footer')).toHaveCount(1)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+
+      const internalLinks = await guide.locator('a[href^="/"]').evaluateAll((links) =>
+        [...new Set(links.map((link) => link.getAttribute('href')!))].sort())
+      const paths = [...categories.map(([code]) => '/categories/' + code), '/games', '/games/collections', '/site-groups', '/updates']
+      expect(internalLinks).toEqual(paths.map((path) => href(locale, path)).sort())
+      await Promise.all(internalLinks.map(async (link) => {
+        const response = await context.request.get(link, { maxRedirects: 0 })
+        expect(response.status(), link).toBe(200)
+      }))
     }
     await page.goto('/games/collections')
-    await expect(page.getByRole('region', { name: 'A guide to GoFurry Lite' })).toHaveCount(0)
+    await expect(page.locator('#home-guide')).toHaveCount(0)
   } finally {
     await context.close()
   }

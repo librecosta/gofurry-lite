@@ -1,16 +1,15 @@
 .guide {
-  display: grid;
   padding-block: clamp(40px, 6vw, 76px);
   padding-inline: max(var(--gutter), calc((100% - 1060px) / 2));
   color: var(--text);
   background: var(--guide-surface);
-  gap: 26px;
   overflow-wrap: anywhere;
 
   h2 { font-size: clamp(1.45rem, 3vw, 2rem); }
   h3 { font-size: clamp(1.08rem, 2vw, 1.28rem); }
+  h4 { font-size: 1rem; }
 
-  p, dd {
+  p {
     color: var(--muted);
     line-height: 1.75;
   }
@@ -23,34 +22,10 @@
 }
 
 .prose {
-  display: grid;
   max-inline-size: 74ch;
-  gap: 9px;
-}
 
-.categories {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-inline-size: 104ch;
-  margin: 16px 0 0;
-  padding: 0;
-  gap: 8px 28px;
-  list-style: none;
-
-  li { padding-block: 8px; }
-  a { font-weight: 750; }
-  p { margin-block-start: 3px; }
-}
-
-.questions {
-  display: grid;
-  margin: 4px 0 0;
-  gap: 12px;
-
-  dt { font-weight: 750; }
-  dd { margin: 3px 0 0; }
-}
-
-@media (width < 680px) {
-  .categories { grid-template-columns: 1fr; }
+  > * { margin: 0; }
+  > * + * { margin-block-start: 1em; }
+  > h3 { margin-block-start: 1.8em; }
+  > h4 + p { margin-block-start: .4em; }
 }
