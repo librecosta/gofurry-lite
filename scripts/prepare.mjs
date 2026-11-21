@@ -89,7 +89,7 @@ function verifyMovieURL(address, appId, mediaKey, kind) {
   assert(url.protocol === 'https:' && moviePolicy[field + 'Hosts'].includes(url.host))
   assert.equal(address, url.origin + url.pathname)
   const pattern = moviePolicy[field + 'Path'].replace('{appId}', String(appId))
-    .replace('{mediaKey}', mediaKey).replace('{format}', kind)
+    .replace('{mediaKey}', mediaKey).replace('{format}', kind === 'hls' ? 'm3u8' : kind)
   assert.match(url.pathname, new RegExp('^' + pattern + '$'))
 }
 
@@ -111,13 +111,14 @@ for (const game of catalog.games) {
   assert(Array.isArray(movies))
   assert.equal(new Set(movies.map(({ id }) => id)).size, movies.length)
   for (const movie of movies) {
-    assert(Object.keys(movie).every((key) => ['id', 'title', 'thumbnail', 'mp4', 'webm'].includes(key)))
+    assert(Object.keys(movie).every((key) => ['id', 'title', 'thumbnail', 'mp4', 'webm', 'hls'].includes(key)))
     assert(typeof movie.id === 'string' && /^[1-9][0-9]*$/.test(movie.id))
     assert(typeof movie.title === 'string' && movie.title === movie.title.trim())
-    assert(movie.mp4 || movie.webm)
+    assert(movie.mp4 || movie.webm || movie.hls)
     verifyMovieURL(movie.thumbnail, game.appId, movie.id, 'thumbnail')
-    if ('mp4' in movie) verifyMovieURL(movie.mp4, game.appId, movie.id, 'mp4')
-    if ('webm' in movie) verifyMovieURL(movie.webm, game.appId, movie.id, 'webm')
+    for (const format of ['mp4', 'webm', 'hls']) {
+      if (format in movie) verifyMovieURL(movie[format], game.appId, movie.id, format)
+    }
   }
 }
 assert.equal(catalog.sites.filter((site) => site.legacyNsfw === 1).length, 28)

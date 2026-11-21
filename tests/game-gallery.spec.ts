@@ -58,6 +58,37 @@ test('screenshot-only archives keep a responsive gallery and a keyboard-accessib
   }
 })
 
+test('archived HLS stays gated and handles a failed Steam manifest after selection', async ({ page, request }) => {
+  const game = games.find(({ rating, movies }) => rating === 'nsfw' && movies?.[0]?.hls)!
+  const movie = game.movies![0]
+  let manifestRequests = 0
+  await page.route(/steamstatic\.com\//, (route) => {
+    if (route.request().url() === movie.hls) {
+      manifestRequests++
+      return route.fulfill({ status: 404 })
+    }
+    return route.fulfill({ contentType: 'image/svg+xml', body: image })
+  })
+
+  const path = '/games/' + game.id
+  for (const url of ['/', '/games', '/zh' + path, path]) {
+    const raw = await (await request.get(url)).text()
+    expect(raw).not.toContain(movie.hls)
+    expect(raw).not.toContain(movie.thumbnail)
+  }
+  const gallery = page.getByRole('region', { name: 'Game media' })
+  await page.goto(path)
+  await expect(gallery).toHaveCount(0)
+  await page.getByRole('switch', { name: 'NSFW content' }).click()
+  await expect(gallery.getByRole('button', { name: /^Video: / })).toHaveCount(Math.min(4, game.movies!.length))
+  await expect(gallery.locator('video')).toHaveCount(0)
+  expect(manifestRequests).toBe(0)
+  await gallery.getByRole('button', { name: 'Video: ' + movie.title, exact: true }).press('Enter')
+  await expect(gallery.getByRole('status')).toHaveText('This Steam video could not be played.')
+  expect(manifestRequests).toBeGreaterThan(0)
+  await expect(page.locator('h1')).toContainText(game.title.en || game.title.zh)
+})
+
 test('restricted detail defers video requests and switches native sources without retaining the player', async ({ page, request }) => {
   const game = games.find(({ rating, screenshots }) => rating === 'nsfw' && screenshots.length > 0)!
   const mp4Clip = await recordClip(page, 'video/mp4;codecs=avc1.42001f')

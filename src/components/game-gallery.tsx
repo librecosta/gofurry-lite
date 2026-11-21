@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react'
+import type Hls from 'hls.js'
 import { motion, useReducedMotion } from 'motion/react'
 import type { GameMovie, Locale } from '../lib/presentation'
 import { t } from './elements'
@@ -26,21 +27,48 @@ function GalleryImage({ src, alt = '', errorLabel }: { src: string; alt?: string
 function MoviePlayer({ movie, label, errorLabel }: { movie: GameMovie; label: string; errorLabel: string }) {
   const [index, setIndex] = useState(0)
   const video = useRef<HTMLVideoElement>(null)
-  const source = [movie.mp4, movie.webm].filter(Boolean)[index]
+  const source = [movie.mp4, movie.webm, movie.hls].filter(Boolean)[index]
+  const isHls = source === movie.hls
   useLayoutEffect(() => {
     const element = video.current
     if (!element || !source) return
-    element.src = source
+    let cancelled = false
+    let hls: Hls | undefined
+    const tryNextSource = () => {
+      if (!cancelled) setIndex((current) => current === index ? current + 1 : current)
+    }
+    element.addEventListener('error', tryNextSource)
+
+    if (!isHls || element.canPlayType('application/vnd.apple.mpegurl')) {
+      element.src = source
+    } else {
+      void import('hls.js').then(({ default: HlsPlayer }) => {
+        if (cancelled) return
+        if (!HlsPlayer.isSupported()) {
+          tryNextSource()
+          return
+        }
+        hls = new HlsPlayer({ enableWorker: false })
+        hls.on(HlsPlayer.Events.ERROR, (_, error) => {
+          if (error.fatal) tryNextSource()
+        })
+        hls.loadSource(source)
+        hls.attachMedia(element)
+      }).catch(tryNextSource)
+    }
+
     return () => {
+      cancelled = true
+      element.removeEventListener('error', tryNextSource)
       element.pause()
+      hls?.destroy()
       element.removeAttribute('src')
       element.load()
     }
-  }, [source])
+  }, [index, isHls, source])
 
   return source
-    ? <video ref={video} controls playsInline preload="metadata" poster={movie.thumbnail} aria-label={label}
-      onError={() => setIndex(index + 1)} />
+    ? <video ref={video} controls playsInline preload="metadata" poster={movie.thumbnail} aria-label={label} />
     : <div className={styles.unavailable} role="status"><Icon name="play" size={25} />{errorLabel}</div>
 }
 

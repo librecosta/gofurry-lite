@@ -13,6 +13,7 @@ class MovieRecoveryTest(unittest.TestCase):
     mp4 = 'https://cdn.akamai.steamstatic.com/steam/apps/456/movie_max.mp4'
     webm = 'https://cdn.akamai.steamstatic.com/steam/apps/456/movie480.webm'
     dash = 'https://video.akamai.steamstatic.com/store_trailers/123/42/' + 'a' * 40 + '/1234/dash_h264.mpd'
+    hls = dash.replace('dash_h264.mpd', 'hls_264_master.m3u8')
 
     def asset(self, kind, url, *, id='1', key=None, order='0', status='0', exists='t'):
         return {
@@ -54,8 +55,18 @@ class MovieRecoveryTest(unittest.TestCase):
                             '"https://cdn.akamai.steamstatic.com.example.com/steam/apps/456/movie_max.webm"}')]
         recovered, audit = recover_movies(assets, media, {1: self.app_id})
         self.assertEqual(dict(recovered), {})
-        self.assertEqual(audit[0]['disposition'], 'streaming-only')
+        self.assertEqual(audit[0]['disposition'], 'dash-only')
         self.assertEqual(audit[0]['formats'], ['dash'])
+
+    def test_recovers_original_hls_without_downloadable_video(self):
+        assets = [self.asset('hls_h264', self.hls)]
+        media = [self.media('{"id": 456, "hls_h264_url": "' + self.hls + '"}')]
+        recovered, audit = recover_movies(assets, media, {1: self.app_id})
+        self.assertEqual(recovered[1], [{
+            'id': '456', 'title': 'Archived trailer', 'thumbnail': self.thumbnail, 'hls': self.hls,
+        }])
+        self.assertEqual(audit[0]['disposition'], 'recovered')
+        self.assertEqual(audit[0]['formats'], ['dash', 'hls'])
 
     def test_keeps_out_of_catalog_records_in_the_audit(self):
         recovered, audit = recover_movies([self.asset('mp4_max', self.mp4)], [self.media()], {})

@@ -180,16 +180,16 @@ def recover_movies(assets, legacy_media, catalog_app_ids):
                 for kind, options in choices.items()}
         formats = [kind for kind in MOVIE_FORMATS if urls.get(kind)]
         poster = next(iter(urls.get('thumbnail', [])), None)
-        native = {kind: urls[kind][0] for kind in ('mp4', 'webm') if urls.get(kind)}
+        playable = {kind: urls[kind][0] for kind in ('mp4', 'webm', 'hls') if urls.get(kind)}
         if game_id not in catalog_app_ids:
             disposition = 'outside-publication'
-        elif native and poster:
+        elif playable and poster:
             disposition = 'recovered'
-            recovered[game_id].append({'id': key, 'title': title, 'thumbnail': poster, **native})
-        elif native:
+            recovered[game_id].append({'id': key, 'title': title, 'thumbnail': poster, **playable})
+        elif playable:
             disposition = 'no-verified-thumbnail'
-        elif 'hls' in formats or 'dash' in formats:
-            disposition = 'streaming-only'
+        elif 'dash' in formats:
+            disposition = 'dash-only'
         else:
             disposition = 'no-verified-source'
         audit.append({
