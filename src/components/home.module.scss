@@ -102,36 +102,9 @@
   }
 }
 
-// The Tool4Furry homepage uses a fine underline that recedes on interaction.
 .sectionAction {
-  display: inline-flex;
-  align-items: center;
   min-height: 40px;
-  color: var(--brand);
-  font-size: .875rem;
-  font-weight: 620;
   white-space: nowrap;
-  transition: color 180ms ease;
-
-  span {
-    position: relative;
-
-    &::after {
-      position: absolute;
-      inset: auto 0 -3px;
-      height: 1px;
-      background: currentcolor;
-      transform-origin: left;
-      transition: transform 180ms ease;
-      content: '';
-    }
-  }
-
-  &:is(:hover, :focus-visible) {
-    color: var(--text);
-
-    span::after { transform: scaleX(.62); }
-  }
 }
 
 .categoryGrid {

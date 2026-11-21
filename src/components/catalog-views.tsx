@@ -5,7 +5,7 @@ import { categories, type CategoryCode } from '../lib/categories'
 import { gameCardLabels, type HomeDirectory, type HomeGame } from '../lib/home-games'
 import { href, inCategory, labels, localized, ordered, steamCover, steamStore } from '../lib/presentation'
 import type { Collection, Directory, Game, GameCardData, Locale, Site, Tag, View } from '../lib/presentation'
-import { Breadcrumb, More, Section, Title, t } from './elements'
+import { Breadcrumb, More, Section, TextLink, Title, t } from './elements'
 import { Filter } from './filter'
 import { HomeCategories, HomeLead } from './home-directory'
 import { useHomeGameRotation } from './home-game-rotation'
@@ -95,19 +95,13 @@ export function HomeView({ locale, initial }: { locale: Locale; initial: HomeDir
       entries={listed.map((site) => ({ id: site.id, card: <SiteRow key={site.id} site={site} locale={locale} /> }))}
       beforeResults={<>
         <Section title={t(locale, '探索分类', 'Explore categories')}
-          more={<a className={homeStyles.sectionAction} href={href(locale, '/site-groups')}>
-            <span>{labels[locale]['site-groups']}</span>
-          </a>}>
+          more={<TextLink className={homeStyles.sectionAction} to={href(locale, '/site-groups')}>{labels[locale]['site-groups']}</TextLink>}>
           <HomeCategories locale={locale} sites={sites} />
         </Section>
         <Section title={t(locale, '兽游发现', 'Discover games')}
           more={<nav className={homeStyles.sectionActions} aria-label={t(locale, '兽游发现', 'Discover games')}>
-            <a className={homeStyles.sectionAction} href={href(locale, '/games/collections')}>
-              <span>{labels[locale].collections}</span>
-            </a>
-            <a className={homeStyles.sectionAction} href={href(locale, '/games')}>
-              <span>{t(locale, '全部游戏', 'All games')}</span>
-            </a>
+            <TextLink className={homeStyles.sectionAction} to={href(locale, '/games/collections')}>{labels[locale].collections}</TextLink>
+            <TextLink className={homeStyles.sectionAction} to={href(locale, '/games')}>{t(locale, '全部游戏', 'All games')}</TextLink>
           </nav>}>
           <div className={styles.gameGrid + ' ' + homeStyles.homeGameGrid} data-home-games={rotation ?? 'static'}>
             {games.map((game) => <GameCard key={game.id} game={game} locale={locale} />)}
@@ -167,17 +161,16 @@ function SiteDetail({ site, locale, directory }: { site: Site } & ModeProps) {
     <article className={styles.detail}>
       <div className={styles.siteLead}>
         <Media kind="logo" src={site.logo} eager />
-        <div>
+        <div className={styles.siteIdentity}>
           <h1>{name}<RatingBadge rating={site.rating} /></h1>
           {site.url && <span className={styles.detailHost}>{new URL(site.url).hostname}</span>}
-          {description && <p>{description.split('\n')[0]}</p>}
-          {classification && <Tags>{[classification.primary, ...classification.secondary].map((code) => <a key={code} href={href(locale, '/categories/' + code)}>{categoryTitle(code, locale)}</a>)}</Tags>}
         </div>
+        {description && <p>{description.split('\n')[0]}</p>}
+        {(site.url || classification) && <div className={styles.actions + ' ' + styles.siteActions}>
+          {site.url && <External url={site.url}>{t(locale, '访问网站', 'Visit website')}</External>}
+          {classification && <a className={styles.secondaryAction} href={href(locale, '/categories/' + classification.primary)}>{t(locale, '返回分类', 'Browse category')}</a>}
+        </div>}
       </div>
-      {(site.url || classification) && <div className={styles.actions}>
-        {site.url && <External url={site.url}>{t(locale, '访问网站', 'Visit website')}</External>}
-        {classification && <a className={styles.secondaryAction} href={href(locale, '/categories/' + classification.primary)}>{t(locale, '返回分类', 'Browse category')}</a>}
-      </div>}
       <div className={styles.detailSplit}>
         <div>
           {description && <section><h2>{t(locale, '关于网站', 'About this website')}</h2><PlainBody value={description} /></section>}
@@ -189,9 +182,11 @@ function SiteDetail({ site, locale, directory }: { site: Site } & ModeProps) {
         {(classification || groups.length > 0) && <aside className={styles.facts}>
           <h2>{t(locale, '站点信息', 'Site information')}</h2>
           <dl>
-            {classification && <div><dt>{t(locale, '主分类', 'Primary category')}</dt><dd><a href={href(locale, '/categories/' + classification.primary)}>{categoryTitle(classification.primary, locale)}</a></dd></div>}
+            {classification && <div><dt>{t(locale, '主分类', 'Primary category')}</dt>
+              <dd><TextLink to={href(locale, '/categories/' + classification.primary)}>{categoryTitle(classification.primary, locale)}</TextLink></dd>
+            </div>}
             {groups.length > 0 && <div><dt>{labels[locale]['site-groups']}</dt>
-              <dd className={styles.factLinks}>{groups.map((group) => <a key={group.id} href={href(locale, '/site-groups/' + group.id)}>{localized(group.title, locale)}</a>)}</dd>
+              <dd className={styles.factLinks}>{groups.map((group) => <TextLink key={group.id} to={href(locale, '/site-groups/' + group.id)}>{localized(group.title, locale)}</TextLink>)}</dd>
             </div>}
           </dl>
         </aside>}

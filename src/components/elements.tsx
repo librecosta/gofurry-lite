@@ -23,6 +23,10 @@ export function More({ to, children }: { to: string; children: ReactNode }) {
   return <a href={to} className={styles.more}>{children}<Icon name="arrow" size={15} /></a>
 }
 
+export function TextLink({ to, children, className }: { to: string; children: ReactNode; className?: string }) {
+  return <a href={to} className={className ? styles.textLink + ' ' + className : styles.textLink}><span>{children}</span></a>
+}
+
 export function Breadcrumb({ locale, title, parent }: { locale: Locale; title: string; parent?: [string, string] }) {
   return <nav className={styles.breadcrumb} aria-label={t(locale, '面包屑导航', 'Breadcrumb')}>
     <a href={href(locale)}>{t(locale, '首页', 'Home')}</a><Icon name="chevron" size={13} />
