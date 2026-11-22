@@ -14,3 +14,7 @@ https://:version.:worker.:account.workers.dev/*
   X-Robots-Tag: noindex
 https://www.go-furry.com/*
   X-Robots-Tag: noindex
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+/media/site/*
+  Cache-Control: public, max-age=31536000, immutable
